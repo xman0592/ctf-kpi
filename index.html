@@ -1,0 +1,1900 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#9e1b32">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="店务KPI">
+<meta name="format-detection" content="telephone=no">
+<title>周大福 · 店务 KPI</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" href="./icons/icon-192.png">
+<style>
+:root{
+  --bg:#f6f2ea;--card:#fff;--ink:#241b18;--ink2:#6b5e56;--ink3:#a29388;
+  --line:#eadfd3;--line2:#f3ece3;
+  --brand:#9e1b32;--brand2:#7c1427;--brand-soft:#f7e7ea;
+  --gold:#c9a227;--gold-soft:#f8efd8;
+  --ok:#2f7d4f;--ok-bg:#e7f5ec;--warn:#b7791f;--warn-bg:#fdf3dc;--bad:#b42318;--bad-bg:#fdecea;
+  --radius:16px;--shadow:0 2px 12px rgba(90,55,35,.07)
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);
+  font:15px/1.55 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  padding-bottom:calc(78px + env(safe-area-inset-bottom));
+  max-width:640px;margin:0 auto;min-height:100dvh;
+  -webkit-font-smoothing:antialiased;
+}
+@media(min-width:700px){body{box-shadow:0 0 40px rgba(90,55,35,.08)}}
+button{font:inherit;color:inherit;border:none;background:none;cursor:pointer;padding:0}
+input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4,p{margin:0}
+svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.hide{display:none!important}
+
+/* 顶栏 */
+.topbar{
+  position:sticky;top:0;z-index:40;color:#fff;
+  background:linear-gradient(135deg,#8d1429 0%,#a81d34 55%,#8d1429 100%);
+  padding:calc(10px + env(safe-area-inset-top)) 14px 11px;
+  display:flex;align-items:center;gap:10px;
+  box-shadow:0 4px 16px rgba(120,20,40,.22)
+}
+.logo{
+  width:38px;height:38px;border-radius:12px;flex:none;
+  background:linear-gradient(145deg,#f0d58a,#c9a227);
+  color:#6d1020;font-weight:800;font-size:10.5px;letter-spacing:.4px;
+  display:grid;place-items:center;line-height:1.05;text-align:center;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)
+}
+.brandwrap{flex:1;min-width:0}
+.brandwrap h1{font-size:16px;font-weight:700;letter-spacing:.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brandwrap p{font-size:11.5px;opacity:.82;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbtn{
+  width:34px;height:34px;border-radius:50%;flex:none;
+  background:rgba(255,255,255,.14);display:grid;place-items:center;
+  border:1px solid rgba(255,255,255,.18)
+}
+.topbtn svg{width:19px;height:19px}
+
+main{padding:12px 12px 0}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:10px}
+.hint{font-size:11.5px;color:var(--ink3);line-height:1.5}
+.muted{color:var(--ink3)}
+.gold{color:var(--gold)}
+
+/* 日期条 */
+.datebar{display:flex;align-items:center;gap:6px;padding:8px 8px;margin-bottom:10px}
+.navbtn{
+  width:38px;height:38px;border-radius:11px;flex:none;
+  background:#fbf7f1;border:1px solid var(--line);
+  display:grid;place-items:center;color:var(--ink2)
+}
+.navbtn:disabled{opacity:.35}
+.datepick{position:relative;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3px 0;cursor:pointer;min-width:0}
+.datepick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;border:0;cursor:pointer}
+.datepick .dp-main{font-size:17px;font-weight:800;letter-spacing:.3px}
+.datepick .dp-sub{font-size:11px;color:var(--ink3);margin-top:1px}
+.today-btn{
+  flex:none;font-size:12px;font-weight:700;color:var(--brand);
+  background:var(--brand-soft);border-radius:999px;padding:7px 11px
+}
+
+/* 看板 hero */
+.hero{display:flex;align-items:center;gap:15px;padding:16px 14px}
+.ring{
+  width:94px;height:94px;border-radius:50%;flex:none;position:relative;
+  background:conic-gradient(var(--brand) var(--deg,#0deg),#f0e6da 0);
+  display:grid;place-items:center;
+  transition:background .4s
+}
+.ring::after{content:"";position:absolute;inset:9px;border-radius:50%;background:#fff}
+.ring-in{position:relative;z-index:1;text-align:center;line-height:1.05}
+.ring-in b{display:block;font-size:25px;font-weight:800;letter-spacing:-.5px}
+.ring-in span{font-size:10px;color:var(--ink3);letter-spacing:.5px}
+.hero-info{flex:1;min-width:0}
+.hero-title{font-size:13px;font-weight:700;color:var(--ink2)}
+.hero-sub{font-size:12px;color:var(--ink3);margin-top:3px}
+.hero-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.htag{font-size:10.5px;padding:3px 8px;border-radius:999px;background:#f7f1e9;color:var(--ink2)}
+.htag.hot{background:var(--brand-soft);color:var(--brand);font-weight:700}
+
+/* 预警 */
+.alerts{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 4px;margin-bottom:6px;scrollbar-width:none}
+.alerts::-webkit-scrollbar{display:none}
+.alert-chip{
+  flex:none;font-size:11.5px;padding:6px 11px;border-radius:999px;
+  background:var(--bad-bg);color:var(--bad);font-weight:600;border:1px solid #f7d4cf
+}
+.alert-chip.warn{background:var(--warn-bg);color:var(--warn);border-color:#f3e2bd}
+
+/* 指标格子 */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.tile{background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:10px 10px 9px;box-shadow:0 1px 3px rgba(90,55,35,.04)}
+.tile-top{display:flex;align-items:center;justify-content:space-between;gap:4px}
+.tile .tn{font-size:11.5px;color:var(--ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .tv{font-size:16px;font-weight:800;margin-top:4px;letter-spacing:-.2px}
+.tile .tv small{font-size:10px;font-weight:600;color:var(--ink3);letter-spacing:0}
+.tile .bar{height:4px;background:#f1e7db;border-radius:4px;margin-top:7px;overflow:hidden}
+.tile .bar i{display:block;height:100%;border-radius:4px;background:var(--ok)}
+.tile.warn .bar i{background:var(--gold)}
+.tile.bad .bar i{background:var(--bad)}
+.tile .tfoot{font-size:9.5px;color:var(--ink3);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dotbad{width:6px;height:6px;border-radius:50%;background:var(--bad);flex:none}
+.dotwarn{width:6px;height:6px;border-radius:50%;background:var(--gold);flex:none}
+.dotok{width:6px;height:6px;border-radius:50%;background:var(--ok);flex:none}
+
+/* 标题 */
+.sec-head{display:flex;align-items:baseline;justify-content:space-between;margin:16px 3px 8px}
+.sec-head h2{font-size:14px;font-weight:800}
+.sec-head span{font-size:11px;color:var(--ink3)}
+
+/* 排行 */
+.rank-list{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.rank-row{display:flex;align-items:center;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line2);cursor:pointer}
+.rank-row:last-child{border-bottom:none}
+.rank-row:active{background:#fcf8f2}
+.rank-no{
+  width:24px;height:24px;border-radius:8px;flex:none;display:grid;place-items:center;
+  font-size:11.5px;font-weight:800;color:var(--ink3);background:#f6f0e8
+}
+.rank-no.r1{background:linear-gradient(145deg,#f3d783,#c9a227);color:#6d1020}
+.rank-no.r2{background:#e8e6e2;color:#5f5a52}
+.rank-no.r3{background:#f0d9c2;color:#8a5a34}
+.avatar{
+  width:38px;height:38px;border-radius:50%;flex:none;
+  background:linear-gradient(145deg,#f5e8d6,#e9d4ba);
+  color:#8a5a34;font-weight:800;font-size:15px;display:grid;place-items:center
+}
+.rank-main{flex:1;min-width:0}
+.rank-line{display:flex;align-items:center;gap:6px}
+.rank-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rank-meta{font-size:10.5px;color:var(--ink3);margin-top:1px;display:flex;align-items:center;gap:5px}
+.bar-track{height:5px;background:#f2e9dd;border-radius:5px;margin-top:6px;overflow:hidden}
+.bar-track i{display:block;height:100%;border-radius:5px;background:linear-gradient(90deg,#b01e2e,#d34a5e)}
+.rank-score{flex:none;text-align:right;min-width:56px}
+.rank-score b{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.rank-score span{display:block;font-size:9.5px;color:var(--ink3);margin-top:-1px}
+.rank-score b.low{color:var(--bad)}
+
+/* 空状态 */
+.empty{padding:30px 18px;text-align:center}
+.empty .em-ic{font-size:30px;margin-bottom:8px}
+.empty h3{font-size:15px;font-weight:700;margin-bottom:5px}
+.empty p{font-size:12.5px;color:var(--ink3);line-height:1.6}
+.empty .btn{margin-top:14px}
+
+/* 按钮 */
+.btn{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  width:100%;padding:13px;border-radius:12px;font-weight:700;font-size:15px;
+  background:#fff;border:1px solid var(--line);color:var(--ink)
+}
+.btn.primary{background:linear-gradient(135deg,#a81d34,#8d1429);color:#fff;border-color:transparent;box-shadow:0 4px 12px rgba(158,27,50,.22)}
+.btn.ghost{background:#fbf7f1;color:var(--brand);border-color:#efdcd4}
+.btn.sm{padding:9px;font-size:13px;border-radius:10px}
+.btn.danger{color:var(--bad);border-color:#f2d7d3;background:#fffafa}
+.btn:active{transform:scale(.99)}
+.btn-row{display:flex;gap:8px}
+.btn-row .btn{flex:1}
+
+/* 录入 */
+.entry-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px}
+.entry-actions .ea-main{min-width:0}
+.entry-actions b{font-size:13.5px}
+.entry-actions .hint{margin-top:1px}
+.mini-actions{display:flex;gap:6px;flex:none}
+.mini-btn{font-size:11px;font-weight:600;padding:7px 9px;border-radius:9px;background:#fbf7f1;border:1px solid var(--line);color:var(--ink2)}
+.mini-btn.danger{color:var(--bad)}
+.staff-jump{display:flex;gap:6px;overflow-x:auto;padding:0 2px 8px;scrollbar-width:none}
+.staff-jump::-webkit-scrollbar{display:none}
+.jump-chip{flex:none;font-size:11.5px;padding:6px 11px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--ink2)}
+.entry-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:13px 12px 11px;margin-bottom:10px;scroll-margin-top:76px}
+.entry-head{display:flex;align-items:center;gap:10px;padding-bottom:11px;border-bottom:1px solid var(--line2);margin-bottom:11px}
+.eh-main{flex:1;min-width:0}
+.eh-main h3{font-size:15px;font-weight:800}
+.eh-main p{font-size:11px;color:var(--ink3);margin-top:1px}
+.eh-main p b{color:var(--brand);font-size:12.5px}
+.entry-dot{width:8px;height:8px;border-radius:50%;background:#e7dccf;flex:none}
+.entry-dot.ok{background:var(--ok)}
+.group-label{font-size:10.5px;font-weight:700;color:var(--ink3);letter-spacing:1px;margin:2px 1px 7px}
+.metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric-field{
+  background:#fcf9f4;border:1px solid var(--line2);border-radius:12px;
+  padding:8px 9px 7px;display:flex;flex-direction:column;gap:3px;min-width:0
+}
+.metric-field.wide{grid-column:1/-1}
+.metric-field .fl{font-size:11.5px;font-weight:700;color:var(--ink2);display:flex;align-items:center;justify-content:space-between;gap:4px}
+.metric-field .fl em{font-style:normal;font-size:9.5px;font-weight:600;color:var(--ink3);background:#f3ece3;border-radius:5px;padding:1px 4px;white-space:nowrap}
+.input-row{display:flex;align-items:center;gap:2px}
+.input-row input{
+  width:100%;min-width:0;border:none;background:transparent;
+  font-size:20px;font-weight:800;padding:1px 0;text-align:right;color:var(--ink);
+  border-bottom:1px solid transparent;border-radius:0;outline:none;
+  font-variant-numeric:tabular-nums
+}
+.input-row input:focus{border-bottom-color:var(--brand);background:#fff;border-radius:4px}
+.input-row input::placeholder{color:#d6c9bb;font-weight:600}
+.input-row .suffix{font-size:11px;color:var(--ink3);flex:none;padding-left:1px}
+.state-chip{
+  align-self:flex-start;font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:999px;
+  background:#f3ece3;color:var(--ink3);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis
+}
+.state-chip.ok{background:var(--ok-bg);color:var(--ok)}
+.state-chip.warn{background:var(--warn-bg);color:var(--warn)}
+.state-chip.bad{background:var(--bad-bg);color:var(--bad)}
+.period-note{font-size:9px;color:var(--ink3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg-toggle{display:flex;gap:3px;background:#f1e9df;border-radius:8px;padding:2px}
+.seg-toggle button{flex:1;padding:6px 2px;border-radius:6px;font-size:10.5px;font-weight:700;color:var(--ink3);white-space:nowrap}
+.seg-toggle button.on{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(90,55,35,.12)}
+.seg-toggle button[data-val="1"].on{background:var(--ok-bg);color:var(--ok);box-shadow:none}
+.seg-toggle button[data-val="0"].on{background:#e9e1d7;color:var(--ink2);box-shadow:none}
+.entry-foot{display:flex;justify-content:flex-end;padding-top:9px}
+.note-card textarea{
+  width:100%;min-height:70px;resize:vertical;border:1px solid var(--line);
+  border-radius:11px;padding:10px 11px;background:#fdfbf8;font-size:14px;line-height:1.55;outline:none
+}
+.note-card textarea:focus{border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-soft)}
+.note-card label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.save-line{text-align:center;font-size:10.5px;color:var(--ink3);padding:8px 0 4px}
+
+/* 趋势 */
+.seg{display:flex;background:#efe7dc;border-radius:11px;padding:3px;gap:3px;margin-bottom:10px}
+.seg button{flex:1;padding:8px 4px;border-radius:8px;font-size:12.5px;font-weight:700;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--brand);box-shadow:0 1px 4px rgba(90,55,35,.1)}
+.chart-card{padding:13px 12px 8px}
+.chart-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.chart-head b{font-size:13px}
+.chart-head span{font-size:10.5px;color:var(--ink3)}
+.chart-wrap{width:100%;overflow:hidden}
+.chart-wrap svg{width:100%;height:auto;display:block;stroke:none}
+.chart-empty{padding:26px 10px;text-align:center;font-size:12px;color:var(--ink3)}
+.metric-bars{display:flex;flex-direction:column;gap:9px;padding:12px 13px}
+.mb-row{display:flex;align-items:center;gap:8px}
+.mb-name{width:74px;flex:none;font-size:11.5px;font-weight:600;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mb-track{flex:1;height:7px;background:#f2e9dd;border-radius:7px;overflow:hidden}
+.mb-track i{display:block;height:100%;border-radius:7px;background:var(--ok)}
+.mb-track i.warn{background:var(--gold)}
+.mb-track i.bad{background:var(--bad)}
+.mb-val{width:48px;flex:none;text-align:right;font-size:10.5px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.trend-rank{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:3px 13px}
+.tr-row{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--line2)}
+.tr-row:last-child{border-bottom:none}
+.tr-name{flex:1;font-size:13px;font-weight:700}
+.tr-days{font-size:10px;color:var(--ink3)}
+.tr-avg{font-size:14px;font-weight:800;text-align:right;min-width:54px}
+.tr-avg small{font-size:9px;color:var(--ink3);font-weight:600}
+
+/* 报表 */
+.report-card{padding:0;overflow:hidden}
+.report-head{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:1px solid var(--line2);background:#fcf8f3}
+.report-head b{font-size:14px}
+.report-head span{font-size:10.5px;color:var(--ink3)}
+.report-pre{
+  margin:0;padding:14px;font:12.5px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  white-space:pre-wrap;word-break:break-word;color:var(--ink);background:#fff;max-height:52vh;overflow:auto
+}
+.report-actions{padding:12px 14px 14px;display:flex;flex-direction:column;gap:8px}
+.report-tip{font-size:10.5px;color:var(--ink3);text-align:center}
+
+/* 设置 */
+.set-sec{margin-bottom:12px}
+.set-sec h2{font-size:12px;font-weight:800;color:var(--ink3);letter-spacing:1px;margin:16px 3px 7px}
+.set-card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.set-row{display:flex;align-items:center;gap:8px;padding:10px 13px;border-bottom:1px solid var(--line2)}
+.set-row:last-child{border-bottom:none}
+.set-label{font-size:12.5px;font-weight:600;color:var(--ink2);flex:none;width:64px}
+.set-row input[type=text],.set-row input[type=number],.set-row select{
+  flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:8px 10px;
+  background:#fdfbf8;font-size:13.5px;outline:none
+}
+.set-row input[type=text]:focus,.set-row input[type=number]:focus,.set-row select:focus{border-color:var(--brand);background:#fff}
+.set-row .unit{font-size:11px;color:var(--ink3);flex:none}
+.set-row .grow{flex:1}
+.icon-btn{
+  width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;
+  color:var(--ink3);background:#f7f1e9;font-size:12px
+}
+.icon-btn.danger{color:var(--bad);background:var(--bad-bg)}
+.switch{position:relative;width:42px;height:25px;flex:none;display:inline-block}
+.switch input{position:absolute;opacity:0;width:0;height:0}
+.switch span{position:absolute;inset:0;border-radius:999px;background:#e5d9cb;transition:.2s}
+.switch span::after{
+  content:"";position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;
+  top:3px;left:3px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)
+}
+.switch input:checked + span{background:var(--brand)}
+.switch input:checked + span::after{transform:translateX(17px)}
+.staff-set-row{display:flex;align-items:center;gap:6px;padding:9px 11px;border-bottom:1px solid var(--line2)}
+.staff-set-row:last-child{border-bottom:none}
+.staff-set-row input[type=text]{flex:1;min-width:0;border:1px solid transparent;background:#fbf7f1;border-radius:8px;padding:7px 9px;font-size:13.5px;font-weight:600;outline:none}
+.staff-set-row input[type=text]:focus{border-color:var(--brand);background:#fff}
+.staff-set-row .off{opacity:.45}
+.add-staff{display:flex;gap:7px;padding:10px 11px;border-top:1px solid var(--line2)}
+.add-staff input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fdfbf8;font-size:13.5px;outline:none}
+.add-staff button{flex:none;padding:0 15px;border-radius:9px;background:var(--brand);color:#fff;font-weight:700;font-size:13px}
+details.metric-set{border-bottom:1px solid var(--line2)}
+details.metric-set:last-child{border-bottom:none}
+details.metric-set summary{
+  list-style:none;display:flex;align-items:center;gap:8px;padding:11px 13px;cursor:pointer
+}
+details.metric-set summary::-webkit-details-marker{display:none}
+details.metric-set summary .ms-name{flex:1;font-size:13px;font-weight:700}
+details.metric-set summary .ms-meta{font-size:10.5px;color:var(--ink3);flex:none}
+details.metric-set summary .chev{width:16px;height:16px;color:var(--ink3);transition:.2s}
+details[open].metric-set summary .chev{transform:rotate(180deg)}
+.mset-body{padding:0 13px 12px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mset-body label{font-size:11px;color:var(--ink3);display:flex;flex-direction:column;gap:4px}
+.mset-body input,.mset-body select{
+  width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fdfbf8;font-size:13px;outline:none
+}
+.mset-body .full{grid-column:1/-1;flex-direction:row;align-items:center;justify-content:space-between}
+.data-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 13px}
+.data-btns .btn{padding:10px;font-size:12.5px}
+.snap-row{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line2);font-size:11.5px}
+.snap-row:last-child{border-bottom:none}
+.snap-row .sn-time{flex:1;color:var(--ink2)}
+.snap-row button{font-size:11px;font-weight:700;color:var(--brand);background:var(--brand-soft);padding:5px 9px;border-radius:7px}
+.about-row{display:flex;align-items:center;justify-content:space-between;padding:11px 13px;border-bottom:1px solid var(--line2);font-size:12.5px}
+.about-row:last-child{border-bottom:none}
+.about-row span{color:var(--ink3)}
+.ver{font-weight:700;color:var(--ink)}
+.tip-box{margin:10px 0 0;background:#fbf7f1;border:1px dashed var(--line);border-radius:11px;padding:10px 12px;font-size:10.5px;color:var(--ink3);line-height:1.6}
+.link-btn{color:var(--brand);font-weight:700;font-size:11px;text-decoration:underline}
+
+/* 底部导航 */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;z-index:50;
+  max-width:640px;margin:0 auto;display:flex;gap:2px;
+  background:rgba(255,255,255,.97);backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  padding:5px 6px calc(5px + env(safe-area-inset-bottom))
+}
+.tabbar button{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:6px 2px 5px;border-radius:12px;font-size:10px;font-weight:700;color:var(--ink3)
+}
+.tabbar button svg{width:21px;height:21px}
+.tabbar button.on{color:var(--brand);background:var(--brand-soft)}
+
+/* 弹层 */
+.sheet{position:fixed;inset:0;z-index:80;background:rgba(36,27,24,.45);display:none;align-items:flex-end}
+.sheet.on{display:flex;animation:fade .18s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.sheet-in{
+  background:#fff;width:100%;max-width:640px;margin:0 auto;max-height:90vh;overflow-y:auto;
+  border-radius:20px 20px 0 0;padding-bottom:calc(18px + env(safe-area-inset-bottom));
+  animation:up .22s cubic-bezier(.2,.8,.2,1)
+}
+@keyframes up{from{transform:translateY(30px);opacity:.6}to{transform:none;opacity:1}}
+.sheet-bar{position:sticky;top:0;background:#fff;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line2)}
+.sheet-bar h3{font-size:16px;font-weight:800}
+.sheet-bar .x{width:32px;height:32px;border-radius:50%;background:#f7f1e9;display:grid;place-items:center;color:var(--ink2);font-size:18px}
+.sheet-body{padding:13px 16px}
+.detail-head{display:flex;align-items:center;gap:11px;padding:2px 0 13px;border-bottom:1px solid var(--line2)}
+.detail-head .big-score{margin-left:auto;text-align:right}
+.detail-head .big-score b{font-size:24px;font-weight:800;color:var(--brand)}
+.detail-head .big-score span{display:block;font-size:10px;color:var(--ink3);margin-top:-2px}
+.detail-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.detail-row:last-child{border-bottom:none}
+.detail-row .dr-main{flex:1;min-width:0}
+.detail-row .dr-main b{font-size:12.5px;display:block}
+.detail-row .dr-main span{font-size:10px;color:var(--ink3)}
+.detail-row .dr-val{flex:none;text-align:right;font-weight:800;font-size:13px}
+.detail-row .dr-val small{display:block;font-size:9.5px;font-weight:600;color:var(--ink3)}
+.detail-row .dr-val.ok{color:var(--ok)}
+.detail-row .dr-val.bad{color:var(--bad)}
+.detail-row .dr-val.warn{color:var(--warn)}
+.help-item{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--line2);font-size:12.5px;line-height:1.6}
+.help-item:last-child{border-bottom:none}
+.help-ic{width:26px;height:26px;border-radius:8px;flex:none;display:grid;place-items:center;background:var(--gold-soft);color:#8a6a12;font-weight:800;font-size:12px}
+.help-item b{display:block;margin-bottom:2px}
+.help-item p{color:var(--ink2);font-size:11.5px}
+
+/* toast */
+#toast{
+  position:fixed;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translate(-50%,12px);
+  z-index:100;background:rgba(36,27,24,.92);color:#fff;font-size:12.5px;font-weight:600;
+  padding:9px 16px;border-radius:999px;opacity:0;pointer-events:none;transition:.2s;
+  max-width:82vw;text-align:center;line-height:1.45
+}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* 小屏 */
+@media(max-width:359px){
+  .tiles{grid-template-columns:repeat(2,1fr)}
+  .metric-grid{grid-template-columns:1fr}
+  .hero{gap:11px}
+  .ring{width:82px;height:82px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="logo">周大福<br>KPI</div>
+  <div class="brandwrap">
+    <h1>店务 KPI</h1>
+    <p id="storeName">周大福 · 吕厝天虹店</p>
+  </div>
+  <button class="topbtn" data-act="help" aria-label="使用帮助">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.2c-.8.4-1.2 1-1.2 1.8"/><path d="M12 17h.01"/></svg>
+  </button>
+</header>
+
+<main id="app"></main>
+
+<nav class="tabbar" id="tabbar">
+  <button data-tab="dash" class="on">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>
+    <span>看板</span>
+  </button>
+  <button data-tab="entry">
+    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    <span>录入</span>
+  </button>
+  <button data-tab="trend">
+    <svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-9"/><path d="M14 6h7v7"/></svg>
+    <span>趋势</span>
+  </button>
+  <button data-tab="report">
+    <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h6"/></svg>
+    <span>报表</span>
+  </button>
+  <button data-tab="set">
+    <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
+    <span>设置</span>
+  </button>
+</nav>
+
+<div class="sheet" id="sheet"></div>
+<div id="toast"></div>
+<input type="file" id="importFile" accept="application/json,.json" class="hide">
+
+<script>
+'use strict';
+
+/* ================= 常量 ================= */
+const APP_VERSION = '1.0.0';
+const LS_KEY = 'ctf_kpi_state_v1';
+const SNAP_KEY = 'ctf_kpi_snaps_v1';
+const SNAP_TS_KEY = 'ctf_kpi_last_snap';
+const MAX_SNAPS = 5;
+const SNAP_INTERVAL = 30 * 60 * 1000;
+
+const DEFAULT_STAFF = [
+  { id:'s1', name:'叶燕红', active:true },
+  { id:'s2', name:'何惠云', active:true },
+  { id:'s3', name:'周燕萍', active:true },
+  { id:'s4', name:'陈原昶', active:true }
+];
+
+const DEFAULT_METRICS = [
+  { id:'wanxiang',   name:'万相占比',            short:'万相',     type:'ratio', threshold:13,  score:0,  period:'day',   enabled:true },
+  { id:'chuansong',  name:'传颂占比',            short:'传颂',     type:'ratio', threshold:10,  score:0,  period:'day',   enabled:true },
+  { id:'tuesdayGold',name:'周二换金破冰',        short:'换金',     type:'event', threshold:0,   score:10, period:'week',  enabled:true, weekday:2 },
+  { id:'salesTarget',name:'总销售完成率',        short:'销售',     type:'ratio', threshold:100, score:10, period:'month', enabled:true },
+  { id:'diamond',    name:'钻石占比',            short:'钻石',     type:'ratio', threshold:8,   score:10, period:'day',   enabled:true },
+  { id:'reviewRate', name:'参评率',              short:'参评',     type:'ratio', threshold:80,  score:0,  period:'day',   enabled:true },
+  { id:'ctfFourYou', name:'CTF FOUR YOU 破冰',   short:'FOUR YOU', type:'event', threshold:0,   score:10, period:'month', enabled:true },
+  { id:'rRu',        name:'R+ RU 占比',          short:'R+RU',     type:'ratio', threshold:30,  score:10, period:'day',   enabled:true },
+  { id:'highJewelry',name:'高珠启航',            short:'高珠',     type:'event', threshold:0,   score:10, period:'month', enabled:true }
+];
+
+/* ================= 工具 ================= */
+const $ = s => document.querySelector(s);
+const pad2 = n => String(n).padStart(2,'0');
+function fmtDate(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function todayStr(){ return fmtDate(new Date()); }
+function parseDate(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(s,n){ const d=parseDate(s); d.setDate(d.getDate()+n); return fmtDate(d); }
+function weekdayCN(s){ return '日一二三四五六'[parseDate(s).getDay()]; }
+function md(s){ const d=parseDate(s); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+function mdShort(s){ const d=parseDate(s); return (d.getMonth()+1)+'/'+d.getDate(); }
+function monthKey(s){ return s.slice(0,7); }
+function monthDates(s){
+  const d=parseDate(s), y=d.getFullYear(), m=d.getMonth();
+  const n=new Date(y,m+1,0).getDate();
+  const arr=[]; for(let i=1;i<=n;i++) arr.push(y+'-'+pad2(m+1)+'-'+pad2(i));
+  return arr;
+}
+function weekStart(s){
+  const d=parseDate(s); const off=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-off); return fmtDate(d);
+}
+function weekDates(s){
+  const st=weekStart(s); const arr=[];
+  for(let i=0;i<7;i++) arr.push(addDays(st,i));
+  return arr;
+}
+function periodLabel(m){
+  if(m.period==='week') return m.id==='tuesdayGold' ? '每周二' : '每周';
+  if(m.period==='month') return '每月';
+  return '每日';
+}
+function periodTag(m){
+  if(m.period==='week') return '本周';
+  if(m.period==='month') return '本月';
+  return '今日';
+}
+function metricMetaText(m){
+  const base = periodLabel(m)+' · '+(m.type==='ratio'?('≥'+m.threshold+'%'):'破冰')+' · '+(m.score?(m.score+'分'):'仅监测');
+  return m.enabled ? base : base+' · 已停用';
+}
+function updateMetricMeta(m){
+  const details = document.querySelector('details.metric-set[data-metric="'+m.id+'"]');
+  if(!details) return;
+  const el = details.querySelector('.ms-meta');
+  if(el) el.textContent = metricMetaText(m);
+}
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function fmt1(n){
+  if(n==null || isNaN(n)) return '—';
+  const v=Number(n);
+  return Number.isInteger(v) ? String(v) : v.toFixed(1);
+}
+function mean(arr){ return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0; }
+function clamp(n,min,max){ return Math.min(max,Math.max(min,n)); }
+
+/* ================= 状态 ================= */
+function defaultState(){
+  return {
+    version: 1,
+    storeName: '周大福 · 吕厝天虹店',
+    staff: DEFAULT_STAFF.map(x=>({...x})),
+    metrics: DEFAULT_METRICS.map(x=>({...x})),
+    records: {},
+    notes: {},
+    meta: { createdAt:new Date().toISOString(), updatedAt:new Date().toISOString() }
+  };
+}
+
+function migrateState(raw){
+  const out = defaultState();
+  if(!raw || typeof raw !== 'object') return out;
+  if(typeof raw.storeName === 'string' && raw.storeName.trim()) out.storeName = raw.storeName.trim();
+  if(Array.isArray(raw.staff) && raw.staff.length){
+    out.staff = raw.staff
+      .filter(s=>s && typeof s.name === 'string')
+      .map((s,i)=>({ id:String(s.id||('s'+(i+1))), name:s.name.slice(0,20), active:s.active!==false }));
+  }
+  const savedMetrics = Array.isArray(raw.metrics) ? raw.metrics : [];
+  out.metrics = DEFAULT_METRICS.map(dm=>{
+    const sm = savedMetrics.find(x=>x && x.id===dm.id);
+    if(!sm) return {...dm};
+    return {
+      ...dm,
+      enabled: sm.enabled!==false,
+      threshold: Number.isFinite(Number(sm.threshold)) ? Number(sm.threshold) : dm.threshold,
+      score: Number.isFinite(Number(sm.score)) ? Number(sm.score) : dm.score,
+      period: ['day','week','month'].includes(sm.period) ? sm.period : dm.period
+    };
+  });
+  out.records = (raw.records && typeof raw.records==='object') ? raw.records : {};
+  out.notes = (raw.notes && typeof raw.notes==='object') ? raw.notes : {};
+  out.meta = Object.assign(out.meta, raw.meta||{});
+  return out;
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw) return migrateState(JSON.parse(raw));
+  }catch(e){ console.warn('读取本地数据失败', e); }
+  return defaultState();
+}
+
+let S = loadState();
+let ui = {
+  tab: 'dash',
+  date: todayStr(),
+  range: 7,
+  reportType: 'day'
+};
+let saveTimer = null;
+
+function saveNow(){
+  clearTimeout(saveTimer); saveTimer=null;
+  S.meta.updatedAt = new Date().toISOString();
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(S));
+  }catch(e){
+    console.warn(e);
+    toast('保存失败，手机存储空间可能满了，请先导出备份');
+  }
+  maybeSnapshot();
+  updateSaveLine();
+}
+function saveSoon(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveNow, 350);
+}
+function updateSaveLine(){
+  const el = $('#lastSaved');
+  if(el) el.textContent = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+}
+function getSnaps(){
+  try{ return JSON.parse(localStorage.getItem(SNAP_KEY)||'[]'); }catch(e){ return []; }
+}
+function maybeSnapshot(force){
+  const now = Date.now();
+  const last = Number(localStorage.getItem(SNAP_TS_KEY)||0);
+  if(!force && now-last < SNAP_INTERVAL) return;
+  try{
+    const snaps = getSnaps();
+    snaps.unshift({ t:now, data:JSON.stringify(S) });
+    while(snaps.length > MAX_SNAPS) snaps.pop();
+    localStorage.setItem(SNAP_KEY, JSON.stringify(snaps));
+    localStorage.setItem(SNAP_TS_KEY, String(now));
+  }catch(e){ console.warn('快照失败', e); }
+}
+
+/* ================= 数据读写 ================= */
+function findStaff(id){ return S.staff.find(s=>s.id===id); }
+function findMetric(id){ return S.metrics.find(m=>m.id===id); }
+function getRec(date, staffId, metricId){
+  const d = S.records[date];
+  if(!d || !d[staffId]) return undefined;
+  return d[staffId][metricId];
+}
+function setRec(date, staffId, metricId, val){
+  if(!S.records[date]) S.records[date] = {};
+  if(!S.records[date][staffId]) S.records[date][staffId] = {};
+  if(val===null || val===undefined || val==='' || (typeof val==='number' && isNaN(val))){
+    delete S.records[date][staffId][metricId];
+  }else{
+    S.records[date][staffId][metricId] = val;
+  }
+  if(Object.keys(S.records[date][staffId]).length===0) delete S.records[date][staffId];
+  if(Object.keys(S.records[date]).length===0) delete S.records[date];
+}
+function hasAnyRecord(date, staffId){
+  const r = S.records[date] && S.records[date][staffId];
+  if(!r) return false;
+  return Object.keys(r).some(k=>r[k]!==null && r[k]!==undefined && r[k]!=='');
+}
+
+/* 指标在某天的状态：pass / fail / pending */
+function metricState(staffId, metric, date){
+  if(!metric.enabled) return { status:'off', pass:null, value:null, date:null };
+  if(metric.type==='event'){
+    if(metric.period==='day'){
+      const v = getRec(date, staffId, metric.id);
+      if(v===undefined || v===null) return { status:'pending', pass:null, value:null, date:null };
+      return { status:v? 'pass':'fail', pass:!!v, value:!!v, date };
+    }
+    const scope = (metric.period==='week' ? weekDates(date) : monthDates(date)).filter(d=>d<=date);
+    for(const d of scope){
+      if(getRec(d, staffId, metric.id)===1){
+        return { status:'pass', pass:true, value:1, date:d };
+      }
+    }
+    const hasZero = scope.some(d=>getRec(d,staffId,metric.id)===0);
+    return { status:'pending', pass:null, value:hasZero?0:null, date:null };
+  }
+  // 比例类
+  if(metric.period==='day'){
+    const v = getRec(date, staffId, metric.id);
+    if(v===undefined || v===null) return { status:'pending', pass:null, value:null, date:null };
+    const pass = Number(v) >= metric.threshold;
+    return { status:pass?'pass':'fail', pass, value:Number(v), date };
+  }
+  if(metric.period==='week'){
+    const scope = weekDates(date).filter(d=>d<=date);
+    let found = null;
+    for(const d of scope){
+      const v = getRec(d, staffId, metric.id);
+      if(v!==undefined && v!==null) found = { d, v:Number(v) };
+    }
+    if(!found) return { status:'pending', pass:null, value:null, date:null };
+    const pass = found.v >= metric.threshold;
+    return { status:pass?'pass':'fail', pass, value:found.v, date:found.d };
+  }
+  // 月
+  const scope = monthDates(date).filter(d=>d<=date);
+  let found = null;
+  for(let i=scope.length-1;i>=0;i--){
+    const d = scope[i];
+    const v = getRec(d, staffId, metric.id);
+    if(v!==undefined && v!==null){ found = { d, v:Number(v) }; break; }
+  }
+  if(!found) return { status:'pending', pass:null, value:null, date:null };
+  const pass = found.v >= metric.threshold;
+  return { status:pass?'pass':'fail', pass, value:found.v, date:found.d };
+}
+
+function staffDaily(staffId, date){
+  const metrics = S.metrics.filter(m=>m.enabled);
+  const items = metrics.map(m=>({ m, st:metricState(staffId, m, date) }));
+  const score = items.reduce((a,x)=>a + (x.st.pass ? (x.m.score||0) : 0), 0);
+  const max = metrics.reduce((a,m)=>a + (m.score||0), 0);
+  const passCount = items.filter(x=>x.st.status==='pass').length;
+  const failCount = items.filter(x=>x.st.status==='fail').length;
+  const pendingCount = items.filter(x=>x.st.status==='pending').length;
+  return {
+    items, score, max, passCount, failCount, pendingCount,
+    total: metrics.length,
+    recorded: hasAnyRecord(date, staffId)
+  };
+}
+
+function storeStats(date){
+  const active = S.staff.filter(s=>s.active);
+  const per = active.map(s=>({ s, d:staffDaily(s.id, date) }));
+  const metrics = S.metrics.filter(m=>m.enabled).map(m=>{
+    let pass=0, fail=0, pending=0;
+    for(const p of per){
+      const st = p.d.items.find(x=>x.m.id===m.id);
+      if(!st) continue;
+      if(st.st.status==='pass') pass++;
+      else if(st.st.status==='fail') fail++;
+      else pending++;
+    }
+    return { m, pass, fail, pending };
+  });
+  const maxScore = S.metrics.filter(m=>m.enabled).reduce((a,m)=>a+(m.score||0),0);
+  const avg = mean(per.map(p=>p.d.score));
+  const passCount = per.reduce((a,p)=>a+p.d.passCount,0);
+  const totalCount = per.reduce((a,p)=>a+p.d.total,0);
+  const recorded = per.filter(p=>p.d.recorded).length;
+  return { active, per, metrics, maxScore, avg, passCount, totalCount, recorded };
+}
+
+function reportRange(type, anchor){
+  const today = todayStr();
+  if(type==='day') return [anchor];
+  if(type==='week'){
+    const ws = weekStart(anchor);
+    const arr = [];
+    for(let i=0;i<7;i++){
+      const d = addDays(ws,i);
+      if(d<=today) arr.push(d);
+    }
+    return arr;
+  }
+  return monthDates(anchor).filter(d=>d<=today);
+}
+
+function metricRates(rows, active){
+  return S.metrics.filter(m=>m.enabled).map(m=>{
+    let pass=0, total=0;
+    if(m.period==='day'){
+      for(const r of rows){
+        for(const s of active){
+          total++;
+          if(metricState(s.id, m, r.d).status==='pass') pass++;
+        }
+      }
+    }else if(m.period==='week'){
+      const weeks = [...new Set(rows.map(r=>weekStart(r.d)))];
+      for(const ws of weeks){
+        const ds = rows.map(r=>r.d).filter(d=>d>=ws && d<=addDays(ws,6));
+        const at = ds[ds.length-1];
+        if(!at) continue;
+        for(const s of active){
+          total++;
+          if(metricState(s.id, m, at).status==='pass') pass++;
+        }
+      }
+    }else{
+      const at = rows[rows.length-1].d;
+      for(const s of active){
+        total++;
+        if(metricState(s.id, m, at).status==='pass') pass++;
+      }
+    }
+    return { m, pass, total };
+  });
+}
+
+function rangeSummary(type, anchor){
+  const dates = reportRange(type, anchor);
+  const rows = dates.map(d=>({ d, st:storeStats(d) })).filter(x=>x.st.recorded>0);
+  const active = S.staff.filter(s=>s.active);
+  const metricStats = rows.length ? metricRates(rows, active) : [];
+  const per = active.map(s=>{
+    const ds = rows.map(r=>({ d:r.d, dly:staffDaily(s.id, r.d) })).filter(x=>x.dly.recorded);
+    return { s, days:ds.length, avg:mean(ds.map(x=>x.dly.score)), max:storeStats(rows.length?rows[rows.length-1].d:anchor).maxScore };
+  }).sort((a,b)=>b.avg-a.avg || a.s.name.localeCompare(b.s.name,'zh'));
+  const best = rows.slice().sort((a,b)=>b.st.avg-a.st.avg)[0] || null;
+  return { dates, rows, active, metricStats, per, avg:mean(rows.map(r=>r.st.avg)), best };
+}
+
+/* ================= 渲染 ================= */
+const NAV = ['dash','entry','trend','report','set'];
+
+function setTab(tab){
+  if(!NAV.includes(tab)) return;
+  ui.tab = tab;
+  render();
+  window.scrollTo({top:0, behavior:'instant'});
+}
+
+function render(){
+  $('#storeName').textContent = S.storeName;
+  document.querySelectorAll('#tabbar button').forEach(b=>b.classList.toggle('on', b.dataset.tab===ui.tab));
+  const app = $('#app');
+  let html = '';
+  if(ui.tab==='dash') html = viewDash();
+  else if(ui.tab==='entry') html = viewEntry();
+  else if(ui.tab==='trend') html = viewTrend();
+  else if(ui.tab==='report') html = viewReport();
+  else html = viewSettings();
+  app.innerHTML = html;
+}
+
+function dateBar(){
+  const d = parseDate(ui.date);
+  const isT = ui.date===todayStr();
+  return `
+  <div class="datebar card">
+    <button class="navbtn" data-act="shift-date" data-delta="-1" aria-label="前一天">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <label class="datepick">
+      <input type="date" id="datePick" value="${ui.date}" max="${todayStr()}">
+      <span class="dp-main">${d.getMonth()+1}月${d.getDate()}日</span>
+      <span class="dp-sub">周${weekdayCN(ui.date)}${isT?' · 今天':''}</span>
+    </label>
+    <button class="navbtn" data-act="shift-date" data-delta="1" ${isT?'disabled':''} aria-label="后一天">
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    ${isT?'':'<button class="today-btn" data-act="today">今天</button>'}
+  </div>`;
+}
+
+function viewDash(){
+  const st = storeStats(ui.date);
+  const max = st.maxScore || 1;
+  const pct = Math.round(st.avg/max*100);
+  const activeN = st.active.length;
+  const today = ui.date===todayStr();
+  const hasData = st.recorded > 0;
+  const alerts = hasData ? st.metrics
+    .filter(x=>x.fail>0 || (x.m.period!=='day' && x.pending>0))
+    .sort((a,b)=>(b.fail+b.pending)-(a.fail+a.pending))
+    .slice(0,5) : [];
+  const ranks = st.per.slice().sort((a,b)=>b.d.score-a.d.score || a.s.name.localeCompare(b.s.name,'zh'));
+  const note = (S.notes[ui.date]||'').trim();
+
+  const tiles = st.metrics.map(x=>{
+    const rate = activeN ? x.pass/activeN : 0;
+    const cls = x.pass===activeN ? '' : (x.fail>0 ? 'bad' : 'warn');
+    const dot = x.pass===activeN ? 'dotok' : (x.fail>0 ? 'dotbad' : 'dotwarn');
+    const foot = x.m.type==='event'
+      ? (x.m.period==='week' ? '本周破冰' : x.m.period==='month' ? '本月破冰' : '今日破冰')
+      : (x.m.period==='month' ? '本月 · ' : '')+'合格线 '+x.m.threshold+'%';
+    return `
+    <div class="tile ${cls}">
+      <div class="tile-top">
+        <span class="tn">${esc(x.m.short||x.m.name)}</span>
+        <span class="${dot}"></span>
+      </div>
+      <div class="tv">${x.pass}<small>/${activeN}人</small></div>
+      <div class="bar"><i style="width:${Math.round(rate*100)}%"></i></div>
+      <div class="tfoot">${foot}</div>
+    </div>`;
+  }).join('');
+
+  const rankRows = ranks.map((p,i)=>{
+    const d = p.d;
+    const wpct = d.max ? Math.round(d.score/d.max*100) : 0;
+    const medal = i===0?'r1':i===1?'r2':i===2?'r3':'';
+    const low = d.recorded && d.score < d.max*0.6;
+    return `
+    <div class="rank-row" data-act="staff-detail" data-staff="${p.s.id}">
+      <span class="rank-no ${medal}">${i+1}</span>
+      <span class="avatar">${esc(p.s.name.slice(0,1))}</span>
+      <div class="rank-main">
+        <div class="rank-line"><span class="rank-name">${esc(p.s.name)}</span></div>
+        <div class="rank-meta">
+          ${d.recorded?'已录':'<span style="color:#c0892b">未录</span>'}
+          <span>· 达标 ${d.passCount}/${d.total}</span>
+          ${d.failCount?`<span style="color:var(--bad)">· 待跟进 ${d.failCount}</span>`:''}
+        </div>
+        <div class="bar-track"><i style="width:${wpct}%"></i></div>
+      </div>
+      <div class="rank-score"><b class="${low?'low':''}">${d.recorded?fmt1(d.score):'—'}</b><span>/ ${d.max} 分</span></div>
+    </div>`;
+  }).join('');
+
+  return `
+  ${dateBar()}
+  <section class="card hero">
+    <div class="ring" style="--deg:${pct*3.6}deg">
+      <div class="ring-in"><b>${st.recorded?fmt1(st.avg):'—'}</b><span>全店均分</span></div>
+    </div>
+    <div class="hero-info">
+      <div class="hero-title">${today?'今日':'当日'} KPI 概览</div>
+      <div class="hero-sub">${st.recorded}/${activeN} 人已录 · 达标 ${st.passCount}/${st.totalCount} 项</div>
+      <div class="hero-tags">
+        <span class="htag${st.recorded<activeN?' hot':''}">${st.recorded<activeN?'还差 '+(activeN-st.recorded)+' 人未录':'全员已录'}</span>
+        <span class="htag">满分 ${st.maxScore} 分</span>
+        ${note?'<span class="htag hot">有备注</span>':''}
+      </div>
+    </div>
+  </section>
+  ${alerts.length?`<div class="alerts">${alerts.map(x=>`<span class="alert-chip ${x.fail?'':'warn'}">${esc(x.m.short)} ${x.fail?x.fail+'人未达标':x.pending+'人待完成'}</span>`).join('')}</div>`:''}
+  <div class="tiles">${tiles}</div>
+  ${hasData?`
+  <div class="sec-head"><h2>店员排行</h2><span>按当日得分</span></div>
+  <div class="rank-list">${rankRows || '<div class="empty"><p>还没有店员，去设置里添加</p></div>'}</div>`:''}
+  ${!st.recorded?`
+  <div class="card empty" style="margin-top:10px">
+    <div class="em-ic">📝</div>
+    <h3>${today?'今天还没开始录':'这天还没有记录'}</h3>
+    <p>每天花两三分钟，把 9 项指标过一遍，自动算分、自动汇总。</p>
+    <button class="btn primary" data-act="goto-entry">去录入</button>
+  </div>`:`
+  <div class="btn-row" style="margin-top:10px">
+    <button class="btn primary" data-act="goto-entry">继续录入</button>
+    <button class="btn" data-act="goto-report">生成日报</button>
+  </div>`}
+  ${note?`<div class="card" style="margin-top:10px;padding:11px 13px"><div class="hint" style="margin-bottom:4px">当日备注</div><div style="font-size:12.5px;white-space:pre-wrap">${esc(note)}</div></div>`:''}
+  `;
+}
+
+function entryFieldHTML(s, m){
+  const st = metricState(s.id, m, ui.date);
+  const raw = getRec(ui.date, s.id, m.id);
+  const chip = chipInfo(m, st);
+  if(m.type==='event'){
+    const v = raw===1?1:raw===0?0:null;
+    const note = periodNote(m, st);
+    return `
+    <div class="metric-field wide" data-field="${s.id}:${m.id}">
+      <span class="fl">${esc(m.name)}<em>${periodLabel(m)}</em></span>
+      <div class="seg-toggle">
+        <button data-act="event" data-staff="${s.id}" data-metric="${m.id}" data-val="1" class="${v===1?'on':''}">✓ 已完成</button>
+        <button data-act="event" data-staff="${s.id}" data-metric="${m.id}" data-val="0" class="${v===0?'on':''}">未完成</button>
+      </div>
+      <span class="state-chip ${chip.cls}" data-chip>${chip.text}</span>
+      <span class="period-note" data-note>${note}</span>
+    </div>`;
+  }
+  const val = raw===undefined||raw===null ? '' : raw;
+  const label = m.period==='month' ? '本月累计' : ('≥'+m.threshold+'%');
+  return `
+  <label class="metric-field" data-field="${s.id}:${m.id}">
+    <span class="fl">${esc(m.short||m.name)}<em>${label}</em></span>
+    <span class="input-row">
+      <input type="number" inputmode="decimal" step="0.1" min="0" max="999" placeholder="—"
+        value="${val}" data-in="metric" data-staff="${s.id}" data-metric="${m.id}">
+      <span class="suffix">%</span>
+    </span>
+    <span class="state-chip ${chip.cls}" data-chip>${chip.text}</span>
+    ${m.period!=='day'?'<span class="period-note" data-note>'+periodNote(m,st)+'</span>':''}
+  </label>`;
+}
+
+function chipInfo(m, st){
+  if(st.status==='pass') return { cls:'ok', text: m.type==='event' ? '已完成' : '达标' };
+  if(st.status==='fail'){
+    if(m.type==='event') return { cls:'bad', text:'未完成' };
+    const diff = Math.max(0, m.threshold - Number(st.value||0));
+    return { cls:'bad', text: '差 '+fmt1(diff)+'%' };
+  }
+  if(m.type==='event') return { cls:'', text: st.value===0 ? '未完成' : '待完成' };
+  return { cls:'', text:'未填' };
+}
+
+function periodNote(m, st){
+  if(m.period==='day') return '';
+  if(m.type==='event'){
+    if(st.status==='pass' && st.date && st.date!==ui.date){
+      return periodTag(m)+' '+mdShort(st.date)+' 已完成';
+    }
+    return '';
+  }
+  if(st.status==='pass' && st.date && st.date!==ui.date){
+    return periodTag(m)+'最新 '+fmt1(st.value)+'%（'+mdShort(st.date)+'）';
+  }
+  if(st.status==='pending') return periodTag(m)+'还未录';
+  return '';
+}
+
+function viewEntry(){
+  const active = S.staff.filter(s=>s.active);
+  const cards = active.map(s=>{
+    const d = staffDaily(s.id, ui.date);
+    const ratioMetrics = S.metrics.filter(m=>m.enabled && m.type==='ratio');
+    const eventMetrics = S.metrics.filter(m=>m.enabled && m.type==='event');
+    return `
+    <section class="entry-card" data-staff-card="${s.id}">
+      <header class="entry-head">
+        <span class="avatar">${esc(s.name.slice(0,1))}</span>
+        <div class="eh-main">
+          <h3>${esc(s.name)}</h3>
+          <p><b data-card-score>${d.score}</b>/${d.max} 分 · 达标 <span data-card-pass>${d.passCount}/${d.total}</span></p>
+        </div>
+        <span class="entry-dot ${d.recorded?'ok':''}" data-card-dot></span>
+      </header>
+      <div class="group-label">占比类</div>
+      <div class="metric-grid">${ratioMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
+      <div class="group-label" style="margin-top:11px">破冰类</div>
+      <div class="metric-grid">${eventMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
+      <div class="entry-foot"><button class="mini-btn" data-act="next-staff" data-staff="${s.id}">下一位 →</button></div>
+    </section>`;
+  }).join('');
+
+  return `
+  ${dateBar()}
+  <div class="card entry-actions">
+    <div class="ea-main">
+      <b>${md(ui.date)} 录入</b>
+      <div class="hint">改完自动保存，不用点提交</div>
+    </div>
+    <div class="mini-actions">
+      <button class="mini-btn" data-act="copy-yesterday">沿用昨日</button>
+      <button class="mini-btn danger" data-act="clear-day">清空</button>
+    </div>
+  </div>
+  <div class="staff-jump">${active.map(s=>`<button class="jump-chip" data-act="jump-staff" data-staff="${s.id}">${esc(s.name)}</button>`).join('')}</div>
+  ${cards || '<div class="card empty"><h3>还没有店员</h3><p>去设置里添加店员后再录入。</p><button class="btn primary" data-act="goto-set">去设置</button></div>'}
+  <div class="card note-card">
+    <label for="dayNote">当日备注（可选）</label>
+    <textarea id="dayNote" placeholder="客流、活动、异常情况，方便月底复盘">${esc(S.notes[ui.date]||'')}</textarea>
+  </div>
+  <div class="save-line">数据只存在本机 · 自动保存 <span id="lastSaved">${S.meta.updatedAt?new Date(S.meta.updatedAt).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}):''}</span> · 记得定期备份</div>
+  `;
+}
+
+function viewTrend(){
+  const range = ui.range;
+  const today = todayStr();
+  let dates;
+  if(range==='month'){
+    dates = monthDates(ui.date).filter(d=>d<=today);
+  }else{
+    const n = range;
+    dates = [];
+    for(let i=n-1;i>=0;i--) dates.push(addDays(today,i));
+  }
+  const rows = dates.map(d=>({ d, st:storeStats(d) })).filter(x=>x.st.recorded>0);
+  const maxScore = S.metrics.filter(m=>m.enabled).reduce((a,m)=>a+(m.score||0),0) || 1;
+  const summary = rows.length ? rangeSummary('week', today) : null;
+
+  let chart = '';
+  if(rows.length>=2){
+    chart = lineChart(rows, maxScore);
+  }else if(rows.length===1){
+    chart = `<div class="chart-empty">这一天均分 <b style="font-size:20px;color:var(--brand)">${fmt1(rows[0].st.avg)}</b> / ${maxScore} 分<br><span style="font-size:10.5px">再录几天就能看到趋势线</span></div>`;
+  }else{
+    chart = '<div class="chart-empty">这段时间还没有记录<br><span style="font-size:10.5px">先去录几天，趋势会自动出来</span></div>';
+  }
+
+  const metricBars = (rows.length ? metricRates(rows, S.staff.filter(x=>x.active)) : []).map(x=>{
+    const rate = x.total ? x.pass/x.total : 0;
+    const cls = rate>=0.8?'':(rate>=0.5?'warn':'bad');
+    return `
+    <div class="mb-row">
+      <span class="mb-name">${esc(x.m.short||x.m.name)}</span>
+      <span class="mb-track"><i class="${cls}" style="width:${Math.round(rate*100)}%"></i></span>
+      <span class="mb-val">${Math.round(rate*100)}%</span>
+    </div>`;
+  }).join('');
+
+  const active = S.staff.filter(s=>s.active);
+  const rank = active.map(s=>{
+    const ds = rows.map(r=>staffDaily(s.id,r.d)).filter(d=>d.recorded);
+    return { s, days:ds.length, avg:mean(ds.map(d=>d.score)) };
+  }).sort((a,b)=>b.avg-a.avg);
+
+  return `
+  <div class="seg">
+    <button data-act="range" data-range="7" class="${range===7?'on':''}">近 7 天</button>
+    <button data-act="range" data-range="30" class="${range===30?'on':''}">近 30 天</button>
+    <button data-act="range" data-range="month" class="${range==='month'?'on':''}">本月</button>
+  </div>
+  <div class="card chart-card">
+    <div class="chart-head"><b>全店日均分</b><span>满分 ${maxScore} 分</span></div>
+    <div class="chart-wrap">${chart}</div>
+  </div>
+  <div class="sec-head"><h2>指标达标率</h2><span>${rows.length} 天有记录</span></div>
+  <div class="card metric-bars">${rows.length?metricBars:'<div class="chart-empty" style="padding:14px">暂无数据</div>'}</div>
+  <div class="sec-head"><h2>店员排名</h2><span>按区间日均分</span></div>
+  <div class="trend-rank">
+    ${rank.map((r,i)=>`
+      <div class="tr-row">
+        <span class="rank-no ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</span>
+        <span class="tr-name">${esc(r.s.name)} <span class="tr-days">${r.days}天</span></span>
+        <span class="tr-avg">${r.days?fmt1(r.avg):'—'}<small> 分</small></span>
+      </div>`).join('')}
+  </div>
+  <div class="tip-box" style="margin-bottom:12px">提示：破冰类指标按周期只记一次，所以同一周/月内会重复计入达标率，适合看整体完成情况。</div>
+  `;
+}
+
+function lineChart(rows, maxScore){
+  const W=340, H=150, P=24;
+  const n = rows.length;
+  const xs = i => P + (W-2*P) * (n===1?0.5:i/(n-1));
+  const ys = v => H-P - (clamp(v,0,maxScore)/maxScore) * (H-2*P);
+  const pts = rows.map((r,i)=>({ x:xs(i), y:ys(r.st.avg), v:r.st.avg, d:r.d }));
+  const line = pts.map((p,i)=>`${i?'L':'M'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const area = `M${pts[0].x.toFixed(1)},${H-P} L${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)} ` +
+    pts.slice(1).map(p=>`L${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ') +
+    ` L${pts[n-1].x.toFixed(1)},${H-P} Z`;
+  const grid = [0,0.5,1].map(t=>{
+    const y = H-P - t*(H-2*P);
+    return `<line x1="${P}" y1="${y.toFixed(1)}" x2="${W-P}" y2="${y.toFixed(1)}" stroke="#efe6da" stroke-width="1"/>
+      <text x="${P-4}" y="${(y+3).toFixed(1)}" text-anchor="end" font-size="8" fill="#a29388">${Math.round(t*maxScore)}</text>`;
+  }).join('');
+  const labelIdx = n<=3 ? pts.map((_,i)=>i) : [0, Math.floor((n-1)/2), n-1];
+  const labels = labelIdx.map(i=>`<text x="${pts[i].x.toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="8" fill="#a29388">${mdShort(rows[i].d)}</text>`).join('');
+  const dots = pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2.6" fill="#fff" stroke="#9e1b32" stroke-width="1.6"/>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="全店日均分趋势">
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9e1b32" stop-opacity=".22"/>
+        <stop offset="1" stop-color="#9e1b32" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    ${grid}
+    <path d="${area}" fill="url(#areaGrad)" stroke="none"/>
+    <path d="${line}" fill="none" stroke="#9e1b32" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+    ${labels}
+  </svg>`;
+}
+
+function viewReport(){
+  const type = ui.reportType;
+  const text = buildReport(type, ui.date);
+  const typeName = type==='day'?'日报':type==='week'?'周报':'月报';
+  let periodText = '';
+  if(type==='day') periodText = md(ui.date)+' 周'+weekdayCN(ui.date);
+  else{
+    const dates = reportRange(type, ui.date);
+    periodText = dates.length ? md(dates[0])+' – '+md(dates[dates.length-1]) : md(ui.date);
+  }
+  return `
+  ${type==='day'?dateBar():`
+  <div class="datebar card">
+    <button class="navbtn" data-act="shift-date" data-delta="${type==='week'?-7:-30}" aria-label="上一期">
+      <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="datepick" style="cursor:default">
+      <span class="dp-main">${periodText}</span>
+      <span class="dp-sub">${typeName}</span>
+    </div>
+    <button class="navbtn" data-act="shift-date" data-delta="${type==='week'?7:30}" aria-label="下一期">
+      <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>`}
+  <div class="seg">
+    <button data-act="report-type" data-type="day" class="${type==='day'?'on':''}">日报</button>
+    <button data-act="report-type" data-type="week" class="${type==='week'?'on':''}">周报</button>
+    <button data-act="report-type" data-type="month" class="${type==='month'?'on':''}">月报</button>
+  </div>
+  <div class="card report-card">
+    <div class="report-head"><b>${typeName}预览</b><span>${periodText}</span></div>
+    <pre class="report-pre" id="reportText">${esc(text)}</pre>
+    <div class="report-actions">
+      <button class="btn primary" data-act="copy-report">复制文字，发到门店群</button>
+      <button class="btn ghost sm" data-act="download-report">下载 TXT</button>
+      <div class="report-tip">复制后直接粘贴到微信，格式不会乱</div>
+    </div>
+  </div>
+  `;
+}
+
+function buildReport(type, anchor){
+  if(type==='day') return buildDayReport(anchor);
+  const name = type==='week'?'周报':'月报';
+  const dates = reportRange(type, anchor);
+  const sum = rangeSummary(type, anchor);
+  const rows = sum.rows;
+  const noData = rows.length===0;
+  const lines = [];
+  const rangeText = dates.length ? md(dates[0])+' – '+md(dates[dates.length-1]) : md(anchor);
+  lines.push('【'+S.storeName+'】'+rangeText+' '+name);
+  if(noData){
+    lines.push('本期还没有记录。');
+    return lines.join('\n');
+  }
+  lines.push('统计天数：'+rows.length+' 天（有记录）');
+  lines.push('日均分：'+fmt1(sum.avg)+' / '+(sum.per[0]?sum.per[0].max:0)+' 分');
+  if(sum.best) lines.push('最好的一天：'+md(sum.best.d)+' '+fmt1(sum.best.st.avg)+' 分');
+  lines.push('');
+  lines.push('一、指标达标');
+  for(const x of sum.metricStats){
+    const rate = x.total ? Math.round(x.pass/x.total*100) : 0;
+    const unit = x.m.period==='day' ? ' 人次' : '';
+    lines.push('- '+x.m.name+'：'+x.pass+'/'+x.total+unit+'（'+rate+'%）');
+  }
+  lines.push('');
+  lines.push('二、店员排名');
+  sum.per.forEach((p,i)=>{
+    lines.push((i+1)+'. '+p.s.name+'：'+(p.days?('日均 '+fmt1(p.avg)+' 分（'+p.days+' 天）'):'未录'));
+  });
+  lines.push('');
+  const issues = [];
+  for(const r of rows){
+    for(const s of S.staff.filter(x=>x.active)){
+      const d = staffDaily(s.id, r.d);
+      const bad = d.items.filter(x=>x.st.status==='fail').map(x=>x.m.name);
+      if(bad.length){
+        issues.push(md(r.d)+' '+s.name+'：'+bad.slice(0,4).join('、'));
+      }
+    }
+  }
+  lines.push('三、待跟进');
+  if(issues.length){
+    issues.slice(0,10).forEach(x=>lines.push('- '+x));
+    if(issues.length>10) lines.push('…另有 '+(issues.length-10)+' 条');
+  }else{
+    lines.push('无，全部达标。');
+  }
+  const notes = rows.map(r=>({d:r.d,n:(S.notes[r.d]||'').trim()})).filter(x=>x.n);
+  if(notes.length){
+    lines.push('');
+    lines.push('四、备注');
+    notes.slice(0,6).forEach(x=>lines.push(md(x.d)+'：'+x.n));
+  }
+  return lines.join('\n');
+}
+
+function buildDayReport(date){
+  const st = storeStats(date);
+  const activeN = st.active.length;
+  const lines = [];
+  lines.push('【'+S.storeName+'】'+md(date)+' 周'+weekdayCN(date)+' 日报');
+  lines.push('全店均分：'+fmt1(st.avg)+' / '+st.maxScore+' 分 · '+st.recorded+'/'+activeN+' 人已录');
+  lines.push('达标人次：'+st.passCount+' / '+st.totalCount+' 项');
+  lines.push('');
+  lines.push('一、指标达标');
+  for(const x of st.metrics){
+    const rate = activeN ? Math.round(x.pass/activeN*100) : 0;
+    const extra = x.m.type==='ratio'
+      ? '，合格线 '+x.m.threshold+'%'
+      : (x.m.period==='week' ? '，本周' : x.m.period==='month' ? '，本月' : '');
+    lines.push('- '+x.m.name+'：'+x.pass+'/'+activeN+' 人（'+rate+'%'+extra+'）');
+  }
+  const issues = st.per.filter(p=>p.d.failCount>0 || p.d.pendingCount>0);
+  lines.push('');
+  lines.push('二、待跟进');
+  if(!issues.length){
+    lines.push('无，全员达标。');
+  }else{
+    for(const p of issues){
+      if(!p.d.recorded){ lines.push('- '+p.s.name+'：今日未录'); continue; }
+      const fails = p.d.items.filter(x=>x.st.status==='fail').map(x=>{
+        if(x.m.type==='event') return x.m.name;
+        return x.m.name+' '+fmt1(x.st.value)+'%（<'+x.m.threshold+'%）';
+      });
+      const pends = p.d.items.filter(x=>x.st.status==='pending').map(x=>x.m.type==='event'?x.m.name+'未完成':x.m.name+'未录');
+      const all = [...fails, ...pends];
+      if(all.length) lines.push('- '+p.s.name+'：'+all.slice(0,5).join('、')+(all.length>5?' 等':''));
+    }
+  }
+  const note = (S.notes[date]||'').trim();
+  if(note){
+    lines.push('');
+    lines.push('三、备注');
+    lines.push(note);
+  }
+  return lines.join('\n');
+}
+
+function viewSettings(){
+  const staffRows = S.staff.map((s,idx)=>`
+    <div class="staff-set-row">
+      <input type="text" value="${esc(s.name)}" maxlength="20" data-set="staffName" data-staff="${s.id}" aria-label="店员姓名">
+      <label class="switch" title="在职/停用">
+        <input type="checkbox" data-set="staffActive" data-staff="${s.id}" ${s.active?'checked':''}>
+        <span></span>
+      </label>
+      <button class="icon-btn" data-act="move-staff" data-staff="${s.id}" data-dir="-1" ${idx===0?'disabled':''} title="上移">↑</button>
+      <button class="icon-btn" data-act="move-staff" data-staff="${s.id}" data-dir="1" ${idx===S.staff.length-1?'disabled':''} title="下移">↓</button>
+      <button class="icon-btn danger" data-act="del-staff" data-staff="${s.id}" title="删除">✕</button>
+    </div>`).join('');
+
+  const metricRows = S.metrics.map(m=>`
+    <details class="metric-set" data-metric="${m.id}">
+      <summary>
+        <span class="ms-name">${esc(m.name)}</span>
+        <span class="ms-meta">${metricMetaText(m)}</span>
+        <svg class="chev" viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2"><path d="M6 9l6 6 6-6"/></svg>
+      </summary>
+      <div class="mset-body">
+        <label class="full">启用 <span class="switch"><input type="checkbox" data-set="metricEnabled" data-metric="${m.id}" ${m.enabled?'checked':''}><span></span></span></label>
+        ${m.type==='ratio'?`<label>合格线（%）<input type="number" inputmode="decimal" step="0.1" min="0" max="999" value="${m.threshold}" data-set="threshold" data-metric="${m.id}"></label>`:''}
+        <label>分值<input type="number" inputmode="numeric" step="1" min="0" max="100" value="${m.score}" data-set="score" data-metric="${m.id}"></label>
+        <label>统计周期
+          <select data-set="period" data-metric="${m.id}">
+            <option value="day" ${m.period==='day'?'selected':''}>每天</option>
+            <option value="week" ${m.period==='week'?'selected':''}>每周</option>
+            <option value="month" ${m.period==='month'?'selected':''}>每月</option>
+          </select>
+        </label>
+      </div>
+    </details>`).join('');
+
+  const snaps = getSnaps();
+  const snapRows = snaps.slice(0,5).map((x,i)=>`
+    <div class="snap-row">
+      <span class="sn-time">${new Date(x.t).toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</span>
+      <button data-act="restore-snap" data-idx="${i}">恢复</button>
+    </div>`).join('');
+
+  return `
+  <div class="set-sec">
+    <h2>门店</h2>
+    <div class="set-card">
+      <div class="set-row">
+        <span class="set-label">店名</span>
+        <input type="text" value="${esc(S.storeName)}" maxlength="30" data-set="storeName" aria-label="门店名称">
+      </div>
+    </div>
+  </div>
+
+  <div class="set-sec">
+    <h2>店员（${S.staff.filter(s=>s.active).length} 人在职 / ${S.staff.length} 人）</h2>
+    <div class="set-card">
+      ${staffRows || '<div class="set-row"><span class="hint">还没有店员</span></div>'}
+      <div class="add-staff">
+        <input type="text" id="newStaffName" maxlength="20" placeholder="输入新店员姓名" aria-label="新店员姓名">
+        <button data-act="add-staff">添加</button>
+      </div>
+    </div>
+    <div class="tip-box">停用后不再出现在录入和排行里，历史记录保留。拖动顺序可用 ↑↓ 调整。</div>
+  </div>
+
+  <div class="set-sec">
+    <h2>指标设置</h2>
+    <div class="set-card">
+      ${metricRows}
+      <div class="data-btns" style="border-top:1px solid var(--line2)">
+        <button class="btn ghost" data-act="reset-metrics">恢复默认指标</button>
+      </div>
+    </div>
+    <div class="tip-box">合格线和分值可以随时改，改完回看板立即生效。数据不会丢。</div>
+  </div>
+
+  <div class="set-sec">
+    <h2>数据安全</h2>
+    <div class="set-card">
+      <div class="data-btns">
+        <button class="btn ghost" data-act="export-json">导出备份</button>
+        <button class="btn ghost" data-act="import-json">导入恢复</button>
+        <button class="btn ghost" data-act="export-csv">导出 Excel</button>
+        <button class="btn ghost" data-act="snapshot-now">立即快照</button>
+      </div>
+      ${snapRows?`<div style="border-top:1px solid var(--line2)"><div class="about-row" style="padding-top:9px;padding-bottom:6px"><span>最近快照</span><span class="hint">可恢复误删</span></div>${snapRows}</div>`:''}
+      <div class="data-btns" style="border-top:1px solid var(--line2)">
+        <button class="btn danger" data-act="clear-day">清空当日</button>
+        <button class="btn danger" data-act="clear-all">清空所有记录</button>
+      </div>
+    </div>
+    <div class="tip-box">数据只存在这台手机的浏览器里，不会上传。换手机或清理浏览器前，一定要先「导出备份」。</div>
+  </div>
+
+  <div class="set-sec">
+    <h2>关于</h2>
+    <div class="set-card">
+      <div class="about-row"><span>版本</span><span class="ver">v${APP_VERSION}</span></div>
+      <div class="about-row"><span>数据占用</span><span>${Math.max(1,Math.round(new Blob([JSON.stringify(S)]).size/1024))} KB</span></div>
+      <div class="about-row"><span>已记录天数</span><span>${Object.keys(S.records).length} 天</span></div>
+      <div class="about-row"><span>更新</span><button class="link-btn" data-act="check-update">检查更新</button></div>
+      <div class="about-row"><span>安装到桌面</span><button class="link-btn" data-act="install-help">看步骤</button></div>
+    </div>
+    <div class="tip-box" style="text-align:center">周大福 · 店务 KPI · 为妈妈做的每日小工具</div>
+  </div>
+  `;
+}
+
+/* ================= 交互 ================= */
+function toast(msg){
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove('on'), 2400);
+}
+
+function shiftDate(delta){
+  let d = addDays(ui.date, delta);
+  if(d > todayStr()) d = todayStr();
+  ui.date = d;
+  render();
+}
+
+function setReportType(t){
+  ui.reportType = t;
+  render();
+}
+
+function refreshField(staffId, metricId){
+  const m = findMetric(metricId);
+  if(!m) return;
+  const field = document.querySelector('[data-field="'+staffId+':'+metricId+'"]');
+  if(!field) return;
+  const st = metricState(staffId, m, ui.date);
+  const chip = chipInfo(m, st);
+  const chipEl = field.querySelector('[data-chip]');
+  if(chipEl){ chipEl.textContent = chip.text; chipEl.className = 'state-chip '+chip.cls; }
+  const noteEl = field.querySelector('[data-note]');
+  if(noteEl) noteEl.textContent = periodNote(m, st);
+  const raw = getRec(ui.date, staffId, metricId);
+  field.querySelectorAll('[data-act="event"]').forEach(b=>{
+    const v = b.dataset.val==='1';
+    b.classList.toggle('on', raw!==undefined && raw!==null && ((v && raw===1) || (!v && raw===0)));
+  });
+}
+
+function refreshCard(staffId){
+  const card = document.querySelector('.entry-card[data-staff-card="'+staffId+'"]');
+  if(!card) return;
+  const d = staffDaily(staffId, ui.date);
+  const sc = card.querySelector('[data-card-score]');
+  const pc = card.querySelector('[data-card-pass]');
+  const dot = card.querySelector('[data-card-dot]');
+  if(sc) sc.textContent = d.score;
+  if(pc) pc.textContent = d.passCount+'/'+d.total;
+  if(dot) dot.classList.toggle('ok', d.recorded);
+  S.metrics.filter(m=>m.enabled).forEach(m=>refreshField(staffId, m.id));
+}
+
+function onMetricInput(input){
+  const staffId = input.dataset.staff;
+  const metricId = input.dataset.metric;
+  let raw = input.value;
+  if(raw===''){ setRec(ui.date, staffId, metricId, null); }
+  else{
+    let v = Number(raw);
+    if(isNaN(v)){ return; }
+    v = clamp(v, 0, 999);
+    if(Number(raw) < 0) input.value = '0';
+    setRec(ui.date, staffId, metricId, v);
+  }
+  refreshField(staffId, metricId);
+  refreshCard(staffId);
+  saveSoon();
+}
+
+function onEventClick(btn){
+  const staffId = btn.dataset.staff;
+  const metricId = btn.dataset.metric;
+  const val = Number(btn.dataset.val);
+  const current = getRec(ui.date, staffId, metricId);
+  const next = (current===val) ? null : val; // 再点一次取消
+  setRec(ui.date, staffId, metricId, next);
+  refreshField(staffId, metricId);
+  refreshCard(staffId);
+  saveSoon();
+  if(next===1) toast('已记录完成');
+}
+
+function copyYesterday(){
+  const y = addDays(ui.date, -1);
+  if(ui.date===todayStr() && !confirm('把 '+md(y)+' 的占比数据，复制到今天还没填的项？')) return;
+  let n = 0;
+  for(const s of S.staff.filter(x=>x.active)){
+    for(const m of S.metrics.filter(x=>x.enabled && x.type==='ratio' && x.period==='day')){
+      const todayV = getRec(ui.date, s.id, m.id);
+      const yV = getRec(y, s.id, m.id);
+      if((todayV===undefined||todayV===null) && yV!==undefined && yV!==null){
+        setRec(ui.date, s.id, m.id, yV);
+        n++;
+      }
+    }
+  }
+  saveNow();
+  render();
+  toast(n?('已沿用昨日 '+n+' 项'):'昨天没有可沿用的数据');
+}
+
+function clearDay(){
+  if(!confirm('清空 '+md(ui.date)+' 的全部录入和备注？')) return;
+  delete S.records[ui.date];
+  delete S.notes[ui.date];
+  saveNow();
+  render();
+  toast('已清空当天记录');
+}
+
+function clearAll(){
+  if(!confirm('会清空所有日期的录入和备注，店员和指标设置保留。建议先导出备份。继续？')) return;
+  if(!confirm('再确认一次：所有历史数据将被删除，无法找回（快照里可能还有最近一份）。')) return;
+  S.records = {};
+  S.notes = {};
+  saveNow();
+  render();
+  toast('已清空所有记录');
+}
+
+function addStaff(){
+  const inp = $('#newStaffName');
+  if(!inp) return;
+  const name = inp.value.trim();
+  if(!name){ toast('先输入姓名'); return; }
+  if(S.staff.some(s=>s.name===name)){ toast('这个名字已经有了'); return; }
+  let n = 1;
+  while(S.staff.some(s=>s.id==='s'+n)) n++;
+  S.staff.push({ id:'s'+n, name, active:true });
+  saveNow();
+  render();
+  toast('已添加 '+name);
+}
+
+function deleteStaff(id){
+  const s = findStaff(id);
+  if(!s) return;
+  if(!confirm('删除店员「'+s.name+'」？历史记录会保留，但排行和录入里不再显示。')) return;
+  S.staff = S.staff.filter(x=>x.id!==id);
+  saveNow();
+  render();
+  toast('已删除');
+}
+
+function moveStaff(id, dir){
+  const i = S.staff.findIndex(s=>s.id===id);
+  const j = i + dir;
+  if(i<0 || j<0 || j>=S.staff.length) return;
+  const tmp = S.staff[i];
+  S.staff[i] = S.staff[j];
+  S.staff[j] = tmp;
+  saveNow();
+  render();
+}
+
+function resetMetrics(){
+  if(!confirm('把 9 项指标的合格线、分值、周期恢复成默认？已录数据不受影响。')) return;
+  S.metrics = DEFAULT_METRICS.map(m=>({...m}));
+  saveNow();
+  render();
+  toast('已恢复默认指标');
+}
+
+function exportJSON(){
+  const payload = {
+    app:'ctf-kpi', version:APP_VERSION, exportedAt:new Date().toISOString(),
+    state:S
+  };
+  download(JSON.stringify(payload,null,2), 'ctf-kpi-backup-'+todayStr().replace(/-/g,'')+'.json', 'application/json');
+  toast('备份已导出，存到微信收藏或电脑');
+}
+
+function exportCSV(){
+  const metricNames = S.metrics.map(m=>m.name);
+  const rows = [['日期','店员',...metricNames]];
+  const dates = Object.keys(S.records).sort();
+  for(const d of dates){
+    for(const s of S.staff){
+      const r = S.records[d] && S.records[d][s.id];
+      if(!r) continue;
+      const vals = S.metrics.map(m=>{
+        const v = r[m.id];
+        if(v===undefined||v===null) return '';
+        if(m.type==='event') return v?1:0;
+        return v;
+      });
+      if(vals.some(v=>v!=='')) rows.push([d,s.name,...vals]);
+    }
+  }
+  const csv = '﻿' + rows.map(r=>r.map(c=>{
+    const s = String(c);
+    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+  }).join(',')).join('\r\n');
+  download(csv, 'ctf-kpi-'+todayStr()+'.csv', 'text/csv;charset=utf-8');
+  toast('Excel 数据已导出');
+}
+
+function download(content, filename, type){
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+}
+
+function importJSONFile(file){
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const obj = JSON.parse(reader.result);
+      const state = obj && obj.state ? obj.state : obj;
+      if(!state || typeof state!=='object' || !state.records || !Array.isArray(state.staff)){
+        throw new Error('格式不对');
+      }
+      if(!confirm('导入会覆盖当前所有数据。确定继续？')) return;
+      maybeSnapshot(true);
+      S = migrateState(state);
+      saveNow();
+      render();
+      toast('导入成功');
+    }catch(e){
+      console.error(e);
+      alert('导入失败：文件不是有效的备份。');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function restoreSnap(idx){
+  const snaps = getSnaps();
+  const snap = snaps[idx];
+  if(!snap) return;
+  if(!confirm('恢复到 '+new Date(snap.t).toLocaleString('zh-CN')+' 的快照？当前数据会被覆盖。')) return;
+  try{
+    const state = JSON.parse(snap.data);
+    maybeSnapshot(true);
+    S = migrateState(state);
+    saveNow();
+    render();
+    toast('已恢复快照');
+  }catch(e){
+    alert('快照损坏，无法恢复');
+  }
+}
+
+async function copyReport(){
+  const ta = $('#reportText');
+  if(!ta) return;
+  const text = ta.textContent;
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('已复制，去微信粘贴吧');
+  }catch(e){
+    const t = document.createElement('textarea');
+    t.value = text;
+    t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try{ document.execCommand('copy'); toast('已复制，去微信粘贴吧'); }
+    catch(err){ toast('复制失败，请长按文字手动复制'); }
+    t.remove();
+  }
+}
+
+function downloadReport(){
+  const ta = $('#reportText');
+  if(!ta) return;
+  const typeName = ui.reportType==='day'?'日报':ui.reportType==='week'?'周报':'月报';
+  download(ta.textContent, '周大福KPI-'+typeName+'-'+ui.date+'.txt', 'text/plain;charset=utf-8');
+  toast('已下载');
+}
+
+async function checkUpdate(){
+  try{
+    const r = await fetch('version.json?t='+Date.now(), {cache:'no-store'});
+    if(!r.ok) throw new Error('http');
+    const j = await r.json();
+    if(j.version && j.version !== APP_VERSION){
+      if(confirm('发现新版本 v'+j.version+'。重新打开后更新，现在刷新吗？')) location.reload();
+    }else{
+      toast('已是最新版本 v'+APP_VERSION);
+    }
+  }catch(e){
+    toast('联网检查失败，当前版本 v'+APP_VERSION);
+  }
+}
+
+function openStaffSheet(staffId){
+  const s = findStaff(staffId);
+  if(!s) return;
+  const d = staffDaily(staffId, ui.date);
+  const rows = d.items.map(x=>{
+    const m = x.m, st = x.st;
+    const cls = st.status==='pass'?'ok':st.status==='fail'?'bad':'';
+    const val = m.type==='event'
+      ? (st.status==='pass'?'已完成':st.status==='fail'?'未完成':(st.value===0?'未完成':'未填'))
+      : (st.value!=null ? fmt1(st.value)+'%' : '未填');
+    const sub = m.type==='ratio'
+      ? periodLabel(m)+' · 合格线 '+m.threshold+'%'+(st.date&&st.date!==ui.date?' · '+mdShort(st.date):'')
+      : periodLabel(m)+' · 破冰';
+    return `
+    <div class="detail-row">
+      <div class="dr-main"><b>${esc(m.name)}</b><span>${sub}</span></div>
+      <div class="dr-val ${cls}">${val}<small>${m.score?(m.score+'分'):'监测'}</small></div>
+    </div>`;
+  }).join('');
+  openSheet(`
+    <div class="sheet-bar"><h3>店员详情</h3><button class="x" data-act="close-sheet">×</button></div>
+    <div class="sheet-body">
+      <div class="detail-head">
+        <span class="avatar">${esc(s.name.slice(0,1))}</span>
+        <div><b style="font-size:15px">${esc(s.name)}</b><div class="hint">${md(ui.date)} 周${weekdayCN(ui.date)}</div></div>
+        <div class="big-score"><b>${d.recorded?fmt1(d.score):'—'}</b><span>/ ${d.max} 分</span></div>
+      </div>
+      ${rows}
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn ghost" data-act="close-sheet">关闭</button>
+        <button class="btn primary" data-act="edit-staff" data-staff="${s.id}">去录入</button>
+      </div>
+    </div>`);
+}
+
+function openHelp(){
+  openSheet(`
+    <div class="sheet-bar"><h3>怎么用</h3><button class="x" data-act="close-sheet">×</button></div>
+    <div class="sheet-body">
+      <div class="help-item"><span class="help-ic">1</span><div><b>每天录一次</b><p>点底部「录入」，按店员把 9 项指标填上。占比类直接填百分比，破冰类点「已完成」。改完自动保存。</p></div></div>
+      <div class="help-item"><span class="help-ic">2</span><div><b>看板自动算分</b><p>达标得满分，不达标 0 分；周/月指标按周期只记一次。红黄绿灯提示谁需要跟进。</p></div></div>
+      <div class="help-item"><span class="help-ic">3</span><div><b>一键发群</b><p>「报表」里生成日报/周报/月报，复制后直接粘到门店群，格式不会乱。</p></div></div>
+      <div class="help-item"><span class="help-ic">4</span><div><b>数据不含糊</b><p>数据只存在这台手机，不上传。设置里可以导出备份/Excel，换手机前先导出。同一台手机建议固定用一种方式打开（比如都用桌面图标），微信里和浏览器里的数据不互通。</p></div></div>
+      <div class="help-item"><span class="help-ic">5</span><div><b>添加到桌面</b><p>安卓：浏览器菜单「添加到主屏幕」；苹果：Safari 分享「添加到主屏幕」；微信里先点右上角「在浏览器打开」。</p></div></div>
+      <div class="tip-box" style="margin-top:12px">指标、合格线、分值都可以在「设置 → 指标设置」里按正式考核表调整。</div>
+    </div>`);
+}
+
+function openInstallHelp(){
+  openSheet(`
+    <div class="sheet-bar"><h3>添加到桌面</h3><button class="x" data-act="close-sheet">×</button></div>
+    <div class="sheet-body">
+      <div class="help-item"><span class="help-ic">安卓</span><div><b>Chrome / 浏览器</b><p>打开链接后点右上角「⋮」→「添加到主屏幕」或「安装应用」。</p></div></div>
+      <div class="help-item"><span class="help-ic">苹果</span><div><b>Safari</b><p>用 Safari 打开 → 底部「分享」→「添加到主屏幕」→ 添加。</p></div></div>
+      <div class="help-item"><span class="help-ic">微信</span><div><b>先切浏览器</b><p>微信里点右上角「…」→「在浏览器打开」，再按上面步骤添加。微信内置浏览器不支持直接安装。</p></div></div>
+      <div class="tip-box" style="margin-top:12px">添加到桌面后，断网也能打开；数据仍只存在本机。</div>
+    </div>`);
+}
+
+function openSheet(html){
+  const sh = $('#sheet');
+  sh.innerHTML = '<div class="sheet-in">'+html+'</div>';
+  sh.classList.add('on');
+  document.body.style.overflow = 'hidden';
+}
+function closeSheet(){
+  const sh = $('#sheet');
+  sh.classList.remove('on');
+  sh.innerHTML = '';
+  document.body.style.overflow = '';
+}
+
+/* ================= 事件绑定 ================= */
+document.addEventListener('click', e=>{
+  const tabBtn = e.target.closest('#tabbar button');
+  if(tabBtn){ setTab(tabBtn.dataset.tab); return; }
+
+  const el = e.target.closest('[data-act]');
+  if(el){
+    const act = el.dataset.act;
+    if(act==='shift-date'){ shiftDate(Number(el.dataset.delta)||0); return; }
+    if(act==='today'){ ui.date = todayStr(); render(); return; }
+    if(act==='goto-entry'){ setTab('entry'); return; }
+    if(act==='goto-report'){ ui.reportType='day'; setTab('report'); return; }
+    if(act==='goto-set'){ setTab('set'); return; }
+    if(act==='staff-detail'){ openStaffSheet(el.dataset.staff); return; }
+    if(act==='edit-staff'){
+      const sid = el.dataset.staff;
+      closeSheet();
+      setTab('entry');
+      setTimeout(()=>{
+        const card = document.querySelector('.entry-card[data-staff-card="'+sid+'"]');
+        if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 60);
+      return;
+    }
+    if(act==='event'){ onEventClick(el); return; }
+    if(act==='next-staff'){
+      const active = S.staff.filter(s=>s.active);
+      const i = active.findIndex(s=>s.id===el.dataset.staff);
+      const next = active[i+1];
+      if(next){
+        const card = document.querySelector('.entry-card[data-staff-card="'+next.id+'"]');
+        if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+      }else{
+        toast('已经是最后一位了');
+      }
+      return;
+    }
+    if(act==='jump-staff'){
+      const card = document.querySelector('.entry-card[data-staff-card="'+el.dataset.staff+'"]');
+      if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+      return;
+    }
+    if(act==='copy-yesterday'){ copyYesterday(); return; }
+    if(act==='clear-day'){ clearDay(); return; }
+    if(act==='clear-all'){ clearAll(); return; }
+    if(act==='reset-metrics'){ resetMetrics(); return; }
+    if(act==='add-staff'){ addStaff(); return; }
+    if(act==='del-staff'){ deleteStaff(el.dataset.staff); return; }
+    if(act==='move-staff'){ moveStaff(el.dataset.staff, Number(el.dataset.dir)); return; }
+    if(act==='export-json'){ exportJSON(); return; }
+    if(act==='import-json'){ $('#importFile').click(); return; }
+    if(act==='export-csv'){ exportCSV(); return; }
+    if(act==='snapshot-now'){ maybeSnapshot(true); toast('已保存快照'); render(); return; }
+    if(act==='restore-snap'){ restoreSnap(Number(el.dataset.idx)); return; }
+    if(act==='range'){ ui.range = el.dataset.range==='month'?'month':Number(el.dataset.range); render(); return; }
+    if(act==='report-type'){ setReportType(el.dataset.type); return; }
+    if(act==='copy-report'){ copyReport(); return; }
+    if(act==='download-report'){ downloadReport(); return; }
+    if(act==='check-update'){ checkUpdate(); return; }
+    if(act==='install-help'){ openInstallHelp(); return; }
+    if(act==='help'){ openHelp(); return; }
+    if(act==='close-sheet'){ closeSheet(); return; }
+  }
+
+  if(e.target.id==='sheet'){ closeSheet(); return; }
+});
+
+document.addEventListener('input', e=>{
+  const t = e.target;
+  if(t.id==='datePick'){ return; }
+  if(t.dataset && t.dataset.in==='metric'){ onMetricInput(t); return; }
+  if(t.id==='dayNote'){
+    S.notes[ui.date] = t.value;
+    saveSoon();
+    return;
+  }
+  if(t.dataset && t.dataset.set){
+    const key = t.dataset.set;
+    if(key==='storeName'){
+      S.storeName = t.value.trim() || '周大福 · 吕厝天虹店';
+      $('#storeName').textContent = S.storeName;
+      saveSoon();
+    }else if(key==='staffName'){
+      const s = findStaff(t.dataset.staff);
+      if(s){ s.name = t.value.trim().slice(0,20) || '未命名'; saveSoon(); }
+    }else if(key==='threshold'){
+      const m = findMetric(t.dataset.metric);
+      if(m){ const v = Number(t.value); if(!isNaN(v)){ m.threshold = clamp(v,0,999); updateMetricMeta(m); saveSoon(); } }
+    }else if(key==='score'){
+      const m = findMetric(t.dataset.metric);
+      if(m){ const v = Number(t.value); if(!isNaN(v)){ m.score = clamp(v,0,100); updateMetricMeta(m); saveSoon(); } }
+    }
+    return;
+  }
+});
+
+document.addEventListener('change', e=>{
+  const t = e.target;
+  if(t.id==='datePick'){
+    let v = t.value;
+    if(!v) return;
+    if(v > todayStr()) v = todayStr();
+    ui.date = v;
+    render();
+    return;
+  }
+  if(t.id==='importFile'){
+    importJSONFile(t.files && t.files[0]);
+    t.value = '';
+    return;
+  }
+  if(t.dataset && t.dataset.set){
+    const key = t.dataset.set;
+    if(key==='staffActive'){
+      const s = findStaff(t.dataset.staff);
+      if(s){ s.active = t.checked; saveNow(); render(); }
+    }else if(key==='metricEnabled'){
+      const m = findMetric(t.dataset.metric);
+      if(m){ m.enabled = t.checked; saveNow(); updateMetricMeta(m); }
+    }else if(key==='period'){
+      const m = findMetric(t.dataset.metric);
+      if(m){ m.period = t.value; saveNow(); updateMetricMeta(m); }
+    }
+  }
+});
+
+window.addEventListener('pagehide', saveNow);
+document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveNow(); });
+
+/* ================= 启动 ================= */
+render();
+
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('./sw.js').catch(err=>console.warn('SW 注册失败', err));
+  });
+}
+
+// 跨天后自动回到今天（应用长时间挂后台时）
+setInterval(()=>{
+  const t = todayStr();
+  if(ui.date < t && ui.tab!=='trend' && ui.tab!=='report'){
+    // 不强制跳，避免妈妈正在补录旧数据；只在完全没记录时切到今天
+  }
+}, 60000);
+</script>
+</body>
+</html>
