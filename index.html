@@ -124,7 +124,7 @@ main{padding:12px 12px 0}
 .tile .bar i{display:block;height:100%;border-radius:4px;background:var(--ok)}
 .tile.warn .bar i{background:var(--gold)}
 .tile.bad .bar i{background:var(--bad)}
-.tile .tfoot{font-size:9.5px;color:var(--ink3);margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .tfoot{font-size:9.5px;color:var(--ink3);margin-top:5px;white-space:normal;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .dotbad{width:6px;height:6px;border-radius:50%;background:var(--bad);flex:none}
 .dotwarn{width:6px;height:6px;border-radius:50%;background:var(--gold);flex:none}
 .dotok{width:6px;height:6px;border-radius:50%;background:var(--ok);flex:none}
@@ -228,12 +228,16 @@ main{padding:12px 12px 0}
 .state-chip.ok{background:var(--ok-bg);color:var(--ok)}
 .state-chip.warn{background:var(--warn-bg);color:var(--warn)}
 .state-chip.bad{background:var(--bad-bg);color:var(--bad)}
-.period-note{font-size:9px;color:var(--ink3);line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.period-note{font-size:9px;color:var(--ink3);line-height:1.35;white-space:normal;display:block}
 .seg-toggle{display:flex;gap:3px;background:#f1e9df;border-radius:8px;padding:2px}
 .seg-toggle button{flex:1;padding:6px 2px;border-radius:6px;font-size:10.5px;font-weight:700;color:var(--ink3);white-space:nowrap}
 .seg-toggle button.on{background:#fff;color:var(--brand);box-shadow:0 1px 3px rgba(90,55,35,.12)}
 .seg-toggle button[data-val="1"].on{background:var(--ok-bg);color:var(--ok);box-shadow:none}
 .seg-toggle button[data-val="0"].on{background:#e9e1d7;color:var(--ink2);box-shadow:none}
+.review-inputs{display:flex;gap:6px}
+.review-inputs label{flex:1;display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--line2);border-radius:9px;padding:3px 7px;font-size:10px;color:var(--ink3);min-width:0}
+.review-inputs input{width:100%;min-width:0;border:none;background:transparent;font-size:16px;font-weight:800;text-align:right;color:var(--ink);outline:none;font-variant-numeric:tabular-nums}
+.review-inputs label span{flex:none}
 .entry-foot{display:flex;justify-content:flex-end;padding-top:9px}
 .note-card textarea{
   width:100%;min-height:70px;resize:vertical;border:1px solid var(--line);
@@ -459,12 +463,13 @@ details[open].metric-set summary .chev{transform:rotate(180deg)}
 'use strict';
 
 /* ================= 常量 ================= */
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 const LS_KEY = 'ctf_kpi_state_v1';
 const SNAP_KEY = 'ctf_kpi_snaps_v1';
 const SNAP_TS_KEY = 'ctf_kpi_last_snap';
 const MAX_SNAPS = 5;
 const SNAP_INTERVAL = 30 * 60 * 1000;
+const DEFAULT_MONTHLY_TARGET = 30; // 人均月度任务（万）
 
 const DEFAULT_STAFF = [
   { id:'s1', name:'叶燕红', active:true },
@@ -473,16 +478,21 @@ const DEFAULT_STAFF = [
   { id:'s4', name:'陈原昶', active:true }
 ];
 
+/* 10 项 × 10 分 = 100 分
+   amount：按周录金额（万），月累计 ÷ 30万 = 占比，得分 = 占比/合格线 × 10（封顶10）
+   review：按周录总单数/参评单数，每周合格 2.5 分，4 周满分
+   count：周二每周 2.5 分（4周满分）；CTF 每半月 5 分（2个半半月）；高珠每月 1 单满分 */
 const DEFAULT_METRICS = [
-  { id:'wanxiang',   name:'万相占比',            short:'万相',     type:'ratio', threshold:13,  score:0,  period:'day',   enabled:true },
-  { id:'chuansong',  name:'传颂占比',            short:'传颂',     type:'ratio', threshold:10,  score:0,  period:'day',   enabled:true },
-  { id:'tuesdayGold',name:'周二换金破冰',        short:'换金',     type:'event', threshold:0,   score:10, period:'week',  enabled:true, weekday:2 },
-  { id:'salesTarget',name:'总销售完成率',        short:'销售',     type:'ratio', threshold:100, score:10, period:'month', enabled:true },
-  { id:'diamond',    name:'钻石占比',            short:'钻石',     type:'ratio', threshold:8,   score:10, period:'day',   enabled:true },
-  { id:'reviewRate', name:'参评率',              short:'参评',     type:'ratio', threshold:80,  score:0,  period:'day',   enabled:true },
-  { id:'ctfFourYou', name:'CTF FOUR YOU 破冰',   short:'FOUR YOU', type:'event', threshold:0,   score:10, period:'month', enabled:true },
-  { id:'rRu',        name:'R+ RU 占比',          short:'R+RU',     type:'ratio', threshold:30,  score:10, period:'day',   enabled:true },
-  { id:'highJewelry',name:'高珠启航',            short:'高珠',     type:'event', threshold:0,   score:10, period:'month', enabled:true }
+  { id:'wanxiang',   name:'万相',            short:'万相',     type:'amount', threshold:13,  score:10, entry:'week',  unit:'万', enabled:true },
+  { id:'chuansong',  name:'传颂',            short:'传颂',     type:'amount', threshold:10,  score:10, entry:'week',  unit:'万', enabled:true },
+  { id:'sanTui',     name:'三推',            short:'三推',     type:'amount', threshold:10,  score:10, entry:'week',  unit:'万', enabled:true },
+  { id:'salesTarget',name:'总销售达成',      short:'销售',     type:'amount', threshold:100, score:10, entry:'week',  unit:'万', enabled:true },
+  { id:'diamond',    name:'钻石',            short:'钻石',     type:'amount', threshold:8,   score:10, entry:'week',  unit:'万', enabled:true },
+  { id:'rRu',        name:'R+RU',            short:'R+RU',     type:'amount', threshold:30,  score:10, entry:'week',  unit:'万', enabled:true },
+  { id:'reviewRate', name:'参评率',          short:'参评',     type:'review', threshold:80,  score:10, entry:'week',  unit:'笔', enabled:true },
+  { id:'tuesdayGold',name:'周二换金破冰',    short:'换金',     type:'count',  threshold:0,   score:10, entry:'week',  unit:'次', min:1, enabled:true, weekday:2 },
+  { id:'ctfFourYou', name:'CTF FOR YOU 破冰', short:'FOR YOU', type:'count',  threshold:0,   score:10, entry:'half',  unit:'单', min:1, enabled:true },
+  { id:'highJewelry',name:'高珠启航',        short:'高珠',     type:'count',  threshold:0,   score:10, entry:'month', unit:'单', min:1, enabled:true }
 ];
 
 /* ================= 工具 ================= */
@@ -511,18 +521,66 @@ function weekDates(s){
   for(let i=0;i<7;i++) arr.push(addDays(st,i));
   return arr;
 }
+function monthStart(s){ return s.slice(0,7)+'-01'; }
+function monthEnd(s){
+  const d=parseDate(s);
+  return s.slice(0,7)+'-'+pad2(new Date(d.getFullYear(), d.getMonth()+1, 0).getDate());
+}
+function halfStart(s){
+  const d=parseDate(s);
+  return s.slice(0,7)+'-'+(d.getDate()<=15?'01':'16');
+}
+function halfEnd(s){
+  const d=parseDate(s);
+  const last=new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  return s.slice(0,7)+'-'+(d.getDate()<=15?'15':pad2(last));
+}
+/* 按周归属：周一在哪个就月算哪个月，保证每周只统计一次 */
+function monthWeeks(s){
+  const mk=monthKey(s), out=[];
+  for(const d of monthDates(s)){
+    const ws=weekStart(d);
+    if(monthKey(ws)!==mk) continue;
+    if(!out.includes(ws)) out.push(ws);
+  }
+  return out;
+}
+function monthHalves(s){ return [s.slice(0,7)+'-01', s.slice(0,7)+'-16']; }
+function entryKey(m, date){
+  if(m.entry==='week') return weekStart(date);
+  if(m.entry==='half') return halfStart(date);
+  if(m.entry==='month') return monthStart(date);
+  return date;
+}
+function weekLabel(date){
+  const ws=weekStart(date);
+  return mdShort(ws)+'–'+mdShort(addDays(ws,6));
+}
+function halfLabel(date){ return mdShort(halfStart(date))+'–'+mdShort(halfEnd(date)); }
+function round1(n){ return Math.round((Number(n)||0)*10)/10; }
+function monthlyTarget(){
+  const v=Number(S && S.monthlyTarget);
+  return v>0 ? v : DEFAULT_MONTHLY_TARGET;
+}
 function periodLabel(m){
-  if(m.period==='week') return m.id==='tuesdayGold' ? '每周二' : '每周';
-  if(m.period==='month') return '每月';
+  if(m.type==='amount') return '按周录';
+  if(m.type==='review') return '按周录';
+  if(m.entry==='week') return '每周';
+  if(m.entry==='half') return '每半月';
+  if(m.entry==='month') return '每月';
   return '每日';
 }
 function periodTag(m){
-  if(m.period==='week') return '本周';
-  if(m.period==='month') return '本月';
-  return '今日';
+  if(m.entry==='half') return '本半月';
+  if(m.entry==='month') return '本月';
+  return '本周';
 }
 function metricMetaText(m){
-  const base = periodLabel(m)+' · '+(m.type==='ratio'?('≥'+m.threshold+'%'):'破冰')+' · '+(m.score?(m.score+'分'):'仅监测');
+  let rule;
+  if(m.type==='amount') rule='≥'+m.threshold+'%';
+  else if(m.type==='review') rule='每周≥'+m.threshold+'%';
+  else rule='≥'+(m.min||1)+(m.unit||'');
+  const base = periodLabel(m)+' · '+rule+' · '+(m.score?(m.score+'分'):'仅监测');
   return m.enabled ? base : base+' · 已停用';
 }
 function updateMetricMeta(m){
@@ -545,8 +603,9 @@ function clamp(n,min,max){ return Math.min(max,Math.max(min,n)); }
 /* ================= 状态 ================= */
 function defaultState(){
   return {
-    version: 1,
+    version: 2,
     storeName: '周大福 · 吕厝天虹店',
+    monthlyTarget: DEFAULT_MONTHLY_TARGET,
     staff: DEFAULT_STAFF.map(x=>({...x})),
     metrics: DEFAULT_METRICS.map(x=>({...x})),
     records: {},
@@ -555,10 +614,59 @@ function defaultState(){
   };
 }
 
+/* 旧版（1.0）数据迁移：
+   - 金额类旧值是百分比，按 30 万折成金额，放到对应周
+   - 参评率旧值折成「100 笔里参评 N 笔」
+   - 破冰类 1/0 保留，放到对应周/半月/月 */
+function convertLegacyRecords(records, target){
+  const out = {};
+  if(!records || typeof records!=='object') return out;
+  for(const date of Object.keys(records).sort()){
+    const day = records[date];
+    if(!day || typeof day!=='object') continue;
+    for(const sid of Object.keys(day)){
+      const rec = day[sid];
+      if(!rec || typeof rec!=='object') continue;
+      for(const mid of Object.keys(rec)){
+        const raw = rec[mid];
+        if(raw===undefined || raw===null || raw==='') continue;
+        const m = DEFAULT_METRICS.find(x=>x.id===mid);
+        if(!m) continue;
+        let key = date, val = raw;
+        if(m.type==='amount'){
+          const n = Number(raw);
+          if(!isFinite(n)) continue;
+          val = Math.round(n*target/100*100)/100;
+          key = weekStart(date);
+        }else if(m.type==='review'){
+          const n = clamp(Number(raw)||0, 0, 100);
+          val = { total:100, reviewed:n };
+          key = weekStart(date);
+        }else if(m.type==='count'){
+          val = Number(raw)||0;
+          key = m.entry==='week' ? weekStart(date) : m.entry==='half' ? halfStart(date) : monthStart(date);
+        }else{
+          const n = Number(raw);
+          if(!isFinite(n)) continue;
+          val = n;
+        }
+        if(!out[key]) out[key] = {};
+        if(!out[key][sid]) out[key][sid] = {};
+        out[key][sid][mid] = val;
+      }
+    }
+  }
+  return out;
+}
+
 function migrateState(raw){
   const out = defaultState();
   if(!raw || typeof raw !== 'object') return out;
+  const legacyVersion = Number(raw.version)||1;
   if(typeof raw.storeName === 'string' && raw.storeName.trim()) out.storeName = raw.storeName.trim();
+  if(Number.isFinite(Number(raw.monthlyTarget)) && Number(raw.monthlyTarget)>0){
+    out.monthlyTarget = Number(raw.monthlyTarget);
+  }
   if(Array.isArray(raw.staff) && raw.staff.length){
     out.staff = raw.staff
       .filter(s=>s && typeof s.name === 'string')
@@ -573,19 +681,28 @@ function migrateState(raw){
       enabled: sm.enabled!==false,
       threshold: Number.isFinite(Number(sm.threshold)) ? Number(sm.threshold) : dm.threshold,
       score: Number.isFinite(Number(sm.score)) ? Number(sm.score) : dm.score,
-      period: ['day','week','month'].includes(sm.period) ? sm.period : dm.period
+      min: Number.isFinite(Number(sm.min)) ? Number(sm.min) : dm.min
     };
   });
-  out.records = (raw.records && typeof raw.records==='object') ? raw.records : {};
+  const rawRecords = (raw.records && typeof raw.records==='object') ? raw.records : {};
+  out.records = legacyVersion < 2 ? convertLegacyRecords(rawRecords, out.monthlyTarget) : rawRecords;
   out.notes = (raw.notes && typeof raw.notes==='object') ? raw.notes : {};
   out.meta = Object.assign(out.meta, raw.meta||{});
+  out.version = 2;
   return out;
 }
 
 function loadState(){
   try{
     const raw = localStorage.getItem(LS_KEY);
-    if(raw) return migrateState(JSON.parse(raw));
+    if(raw){
+      const parsed = JSON.parse(raw);
+      const st = migrateState(parsed);
+      if((Number(parsed.version)||1) < 2){
+        try{ localStorage.setItem(LS_KEY, JSON.stringify(st)); }catch(e){}
+      }
+      return st;
+    }
   }catch(e){ console.warn('读取本地数据失败', e); }
   return defaultState();
 }
@@ -654,73 +771,169 @@ function setRec(date, staffId, metricId, val){
   if(Object.keys(S.records[date][staffId]).length===0) delete S.records[date][staffId];
   if(Object.keys(S.records[date]).length===0) delete S.records[date];
 }
-function hasAnyRecord(date, staffId){
-  const r = S.records[date] && S.records[date][staffId];
-  if(!r) return false;
-  return Object.keys(r).some(k=>r[k]!==null && r[k]!==undefined && r[k]!=='');
+function hasAnyEntry(staffId, date){
+  return S.metrics.some(m=>{
+    if(!m.enabled) return false;
+    const st = metricState(staffId, m, date);
+    if(m.type==='review') return (st.weeksRecorded||0) > 0;
+    return st.value!==null && st.value!==undefined;
+  });
 }
 
-/* 指标在某天的状态：pass / fail / pending */
+/* 指标在某个日期的“本月累计”状态 */
 function metricState(staffId, metric, date){
   if(!metric.enabled) return { status:'off', pass:null, value:null, date:null };
-  if(metric.type==='event'){
-    if(metric.period==='day'){
-      const v = getRec(date, staffId, metric.id);
-      if(v===undefined || v===null) return { status:'pending', pass:null, value:null, date:null };
-      return { status:v? 'pass':'fail', pass:!!v, value:!!v, date };
+
+  if(metric.type==='amount'){
+    const base = monthlyTarget();
+    const weeks = monthWeeks(date).filter(ws=>ws<=date);
+    let total = 0, has = false;
+    for(const ws of weeks){
+      const v = getRec(ws, staffId, metric.id);
+      if(v!==undefined && v!==null && v!==''){ total += Number(v)||0; has = true; }
     }
-    const scope = (metric.period==='week' ? weekDates(date) : monthDates(date)).filter(d=>d<=date);
-    for(const d of scope){
-      if(getRec(d, staffId, metric.id)===1){
-        return { status:'pass', pass:true, value:1, date:d };
+    const weekRaw = getRec(weekStart(date), staffId, metric.id);
+    const weekValue = (weekRaw===undefined||weekRaw===null||weekRaw==='') ? null : Number(weekRaw)||0;
+    const ratio = (has && base>0) ? total/base*100 : null;
+    const pass = ratio!==null && ratio >= metric.threshold;
+    return {
+      status: has ? (pass?'pass':'fail') : 'pending',
+      pass, value: has?total:null, ratio, weekValue,
+      weeksRecorded: weeks.filter(ws=>getRec(ws,staffId,metric.id)!=null).length,
+      date: weekStart(date)
+    };
+  }
+
+  if(metric.type==='review'){
+    const accum = (list) => {
+      let total=0, reviewed=0, weeksPassed=0, weeksRecorded=0;
+      for(const ws of list){
+        const v = getRec(ws, staffId, metric.id);
+        if(v && typeof v==='object'){
+          const t = Number(v.total)||0, r = Number(v.reviewed)||0;
+          if(t>0 || r>0){
+            weeksRecorded++; total += t; reviewed += r;
+            if(t>0 && r/t*100 >= metric.threshold) weeksPassed++;
+          }
+        }
       }
+      return { total, reviewed, weeksPassed, weeksRecorded, ratio: total>0 ? reviewed/total*100 : null };
+    };
+    const allWeeks = monthWeeks(date);
+    const cum = accum(allWeeks.filter(ws=>ws<=date));   // 截止输入周
+    const month = accum(allWeeks);                       // 整月（含已录入的其他周）
+    const curRaw = getRec(weekStart(date), staffId, metric.id);
+    const cur = (curRaw && typeof curRaw==='object')
+      ? { total:Number(curRaw.total)||0, reviewed:Number(curRaw.reviewed)||0 }
+      : { total:0, reviewed:0 };
+    const ratio = cum.ratio;
+    const weekRatio = cur.total>0 ? cur.reviewed/cur.total*100 : null;
+    const pass = ratio!==null && ratio >= metric.threshold;
+    return {
+      status: cum.weeksRecorded ? (pass?'pass':'fail') : 'pending',
+      pass, value: ratio, ratio, reviewed: cum.reviewed, total: cum.total, weekRatio,
+      weeksPassed: cum.weeksPassed, weeksRecorded: cum.weeksRecorded,
+      monthRatio: month.ratio, monthReviewed: month.reviewed, monthTotal: month.total,
+      monthWeeksPassed: month.weeksPassed, monthWeeksRecorded: month.weeksRecorded,
+      weekValue: cur, date: weekStart(date)
+    };
+  }
+
+  if(metric.type==='count'){
+    const min = Number(metric.min)||1;
+    if(metric.entry==='week'){
+      const weeks = monthWeeks(date).filter(ws=>ws<=date);
+      let passed=0, recorded=0, sum=0;
+      for(const ws of weeks){
+        const v = getRec(ws, staffId, metric.id);
+        if(v!==undefined && v!==null && v!==''){
+          recorded++; sum += Number(v)||0;
+          if(Number(v)>=min) passed++;
+        }
+      }
+      const curRaw = getRec(weekStart(date), staffId, metric.id);
+      const weekValue = (curRaw===undefined||curRaw===null||curRaw==='') ? null : Number(curRaw)||0;
+      return {
+        status: passed>=4 ? 'pass' : (recorded?'fail':'pending'),
+        pass: passed>=4, value: recorded?sum:null, periodsPassed:passed, periodsTotal:4,
+        weekValue, date: weekStart(date)
+      };
     }
-    const hasZero = scope.some(d=>getRec(d,staffId,metric.id)===0);
-    return { status:'pending', pass:null, value:hasZero?0:null, date:null };
-  }
-  // 比例类
-  if(metric.period==='day'){
-    const v = getRec(date, staffId, metric.id);
-    if(v===undefined || v===null) return { status:'pending', pass:null, value:null, date:null };
-    const pass = Number(v) >= metric.threshold;
-    return { status:pass?'pass':'fail', pass, value:Number(v), date };
-  }
-  if(metric.period==='week'){
-    const scope = weekDates(date).filter(d=>d<=date);
-    let found = null;
-    for(const d of scope){
-      const v = getRec(d, staffId, metric.id);
-      if(v!==undefined && v!==null) found = { d, v:Number(v) };
+    if(metric.entry==='half'){
+      const halves = monthHalves(date).filter(hs=>hs<=date);
+      let passed=0, recorded=0, sum=0;
+      for(const hs of halves){
+        const v = getRec(hs, staffId, metric.id);
+        if(v!==undefined && v!==null && v!==''){
+          recorded++; sum += Number(v)||0;
+          if(Number(v)>=min) passed++;
+        }
+      }
+      const curRaw = getRec(halfStart(date), staffId, metric.id);
+      const halfValue = (curRaw===undefined||curRaw===null||curRaw==='') ? null : Number(curRaw)||0;
+      return {
+        status: passed>=2 ? 'pass' : (recorded?'fail':'pending'),
+        pass: passed>=2, value: recorded?sum:null, periodsPassed:passed, periodsTotal:2,
+        halfValue, date: halfStart(date)
+      };
     }
-    if(!found) return { status:'pending', pass:null, value:null, date:null };
-    const pass = found.v >= metric.threshold;
-    return { status:pass?'pass':'fail', pass, value:found.v, date:found.d };
+    const key = monthStart(date);
+    const raw = getRec(key, staffId, metric.id);
+    const v = (raw===undefined||raw===null||raw==='') ? null : Number(raw)||0;
+    const pass = v!==null && v>=min;
+    return {
+      status: v===null ? 'pending' : (pass?'pass':'fail'),
+      pass, value: v, periodsPassed: pass?1:0, periodsTotal:1,
+      monthValue: v, date: key
+    };
   }
-  // 月
-  const scope = monthDates(date).filter(d=>d<=date);
-  let found = null;
-  for(let i=scope.length-1;i>=0;i--){
-    const d = scope[i];
-    const v = getRec(d, staffId, metric.id);
-    if(v!==undefined && v!==null){ found = { d, v:Number(v) }; break; }
+
+  // 兼容旧的比例类
+  const v = getRec(date, staffId, metric.id);
+  if(v===undefined || v===null) return { status:'pending', pass:null, value:null, date:null };
+  const pass = Number(v) >= metric.threshold;
+  return { status:pass?'pass':'fail', pass, value:Number(v), ratio:Number(v), date };
+}
+
+/* 计分：金额按完成比例折算，破冰按已完成的周/半月给分 */
+function metricScore(metric, st){
+  const max = Number(metric.score)||0;
+  if(!max || !metric.enabled || !st) return 0;
+  if(metric.type==='amount'){
+    if(st.ratio===null || st.ratio===undefined || !(Number(metric.threshold)>0)) return 0;
+    return round1(clamp(st.ratio/Number(metric.threshold)*max, 0, max));
   }
-  if(!found) return { status:'pending', pass:null, value:null, date:null };
-  const pass = found.v >= metric.threshold;
-  return { status:pass?'pass':'fail', pass, value:found.v, date:found.d };
+  if(metric.type==='review'){
+    return round1(clamp((st.weeksPassed||0)/4*max, 0, max));
+  }
+  if(metric.type==='count'){
+    if(metric.entry==='week') return round1(clamp((st.periodsPassed||0)/4*max, 0, max));
+    if(metric.entry==='half') return round1(clamp((st.periodsPassed||0)/2*max, 0, max));
+    return st.pass ? max : 0;
+  }
+  if(metric.type==='ratio') return st.pass ? max : 0;
+  return 0;
+}
+function isFullScore(metric, st){
+  const max = Number(metric.score)||0;
+  return max>0 && metricScore(metric, st) >= max-0.001;
 }
 
 function staffDaily(staffId, date){
   const metrics = S.metrics.filter(m=>m.enabled);
-  const items = metrics.map(m=>({ m, st:metricState(staffId, m, date) }));
-  const score = items.reduce((a,x)=>a + (x.st.pass ? (x.m.score||0) : 0), 0);
-  const max = metrics.reduce((a,m)=>a + (m.score||0), 0);
-  const passCount = items.filter(x=>x.st.status==='pass').length;
-  const failCount = items.filter(x=>x.st.status==='fail').length;
+  const items = metrics.map(m=>{
+    const st = metricState(staffId, m, date);
+    return { m, st, score: metricScore(m, st), full: isFullScore(m, st) };
+  });
+  const score = round1(items.reduce((a,x)=>a+x.score, 0));
+  const max = metrics.reduce((a,m)=>a + (Number(m.score)||0), 0);
+  const passCount = items.filter(x=>x.full).length;
+  const failCount = items.filter(x=>!x.full && x.st.status==='fail').length;
   const pendingCount = items.filter(x=>x.st.status==='pending').length;
   return {
     items, score, max, passCount, failCount, pendingCount,
     total: metrics.length,
-    recorded: hasAnyRecord(date, staffId)
+    recorded: hasAnyEntry(staffId, date)
   };
 }
 
@@ -728,17 +941,33 @@ function storeStats(date){
   const active = S.staff.filter(s=>s.active);
   const per = active.map(s=>({ s, d:staffDaily(s.id, date) }));
   const metrics = S.metrics.filter(m=>m.enabled).map(m=>{
-    let pass=0, fail=0, pending=0;
+    let full=0, partial=0, pending=0;
+    let sum=0, reviewed=0, totalOrders=0, periods=0;
+    let monthReviewed=0, monthTotalOrders=0;
     for(const p of per){
-      const st = p.d.items.find(x=>x.m.id===m.id);
-      if(!st) continue;
-      if(st.st.status==='pass') pass++;
-      else if(st.st.status==='fail') fail++;
+      const it = p.d.items.find(x=>x.m.id===m.id);
+      if(!it) continue;
+      if(it.full) full++;
+      else if(it.score>0 || it.st.status==='fail') partial++;
       else pending++;
+      if(m.type==='amount' && it.st.value!=null) sum += it.st.value;
+      if(m.type==='review'){
+        reviewed += it.st.reviewed||0;
+        totalOrders += it.st.total||0;
+        periods += it.st.weeksPassed||0;
+        monthReviewed += it.st.monthReviewed||0;
+        monthTotalOrders += it.st.monthTotal||0;
+      }
+      if(m.type==='count'){ sum += it.st.value||0; periods += it.st.periodsPassed||0; }
     }
-    return { m, pass, fail, pending };
+    return {
+      m, pass:full, full, partial, pending,
+      sum, reviewed, totalOrders, periods, monthReviewed, monthTotalOrders,
+      ratio: (m.type==='amount' && active.length && monthlyTarget()>0)
+        ? sum/(monthlyTarget()*active.length)*100 : null
+    };
   });
-  const maxScore = S.metrics.filter(m=>m.enabled).reduce((a,m)=>a+(m.score||0),0);
+  const maxScore = S.metrics.filter(m=>m.enabled).reduce((a,m)=>a+(Number(m.score)||0),0);
   const avg = mean(per.map(p=>p.d.score));
   const passCount = per.reduce((a,p)=>a+p.d.passCount,0);
   const totalCount = per.reduce((a,p)=>a+p.d.total,0);
@@ -762,34 +991,18 @@ function reportRange(type, anchor){
 }
 
 function metricRates(rows, active){
+  const at = rows.length ? rows[rows.length-1].d : ui.date;
   return S.metrics.filter(m=>m.enabled).map(m=>{
-    let pass=0, total=0;
-    if(m.period==='day'){
-      for(const r of rows){
-        for(const s of active){
-          total++;
-          if(metricState(s.id, m, r.d).status==='pass') pass++;
-        }
-      }
-    }else if(m.period==='week'){
-      const weeks = [...new Set(rows.map(r=>weekStart(r.d)))];
-      for(const ws of weeks){
-        const ds = rows.map(r=>r.d).filter(d=>d>=ws && d<=addDays(ws,6));
-        const at = ds[ds.length-1];
-        if(!at) continue;
-        for(const s of active){
-          total++;
-          if(metricState(s.id, m, at).status==='pass') pass++;
-        }
-      }
-    }else{
-      const at = rows[rows.length-1].d;
-      for(const s of active){
-        total++;
-        if(metricState(s.id, m, at).status==='pass') pass++;
-      }
+    let pass=0, total=0, prog=0;
+    const max = Number(m.score)||0;
+    for(const s of active){
+      const st = metricState(s.id, m, at);
+      const sc = metricScore(m, st);
+      total++;
+      if(max>0 && sc >= max-0.001) pass++;
+      prog += max>0 ? sc/max : 0;
     }
-    return { m, pass, total };
+    return { m, pass, total, progress: total ? prog/total : 0 };
   });
 }
 
@@ -849,36 +1062,48 @@ function dateBar(){
   </div>`;
 }
 
+function tileFoot(x, activeN){
+  const m = x.m;
+  if(m.type==='amount'){
+    return '全店 '+fmt1(x.sum)+'万 · 合格'+m.threshold+'%';
+  }
+  if(m.type==='review'){
+    const r = x.monthTotalOrders ? x.monthReviewed/x.monthTotalOrders*100 : null;
+    return '本月 '+(r===null?'—':fmt1(r)+'%')+' · ≥'+m.threshold+'%';
+  }
+  if(m.entry==='week') return '全店 '+x.periods+'/'+(activeN*4)+' 周次 · 每周2.5分';
+  if(m.entry==='half') return '全店 '+x.periods+'/'+(activeN*2)+' 半月次 · 每半月5分';
+  return '本月 '+fmt1(x.sum)+' 单 · 每月1单满分';
+}
+
 function viewDash(){
   const st = storeStats(ui.date);
   const max = st.maxScore || 1;
   const pct = Math.round(st.avg/max*100);
   const activeN = st.active.length;
-  const today = ui.date===todayStr();
   const hasData = st.recorded > 0;
+  const monthText = (parseDate(ui.date).getMonth()+1)+'月';
   const alerts = hasData ? st.metrics
-    .filter(x=>x.fail>0 || (x.m.period!=='day' && x.pending>0))
-    .sort((a,b)=>(b.fail+b.pending)-(a.fail+a.pending))
+    .filter(x=>x.full<activeN)
+    .map(x=>({ x, miss: activeN-x.full }))
+    .sort((a,b)=>b.miss-a.miss)
     .slice(0,5) : [];
   const ranks = st.per.slice().sort((a,b)=>b.d.score-a.d.score || a.s.name.localeCompare(b.s.name,'zh'));
   const note = (S.notes[ui.date]||'').trim();
 
   const tiles = st.metrics.map(x=>{
-    const rate = activeN ? x.pass/activeN : 0;
-    const cls = x.pass===activeN ? '' : (x.fail>0 ? 'bad' : 'warn');
-    const dot = x.pass===activeN ? 'dotok' : (x.fail>0 ? 'dotbad' : 'dotwarn');
-    const foot = x.m.type==='event'
-      ? (x.m.period==='week' ? '本周破冰' : x.m.period==='month' ? '本月破冰' : '今日破冰')
-      : (x.m.period==='month' ? '本月 · ' : '')+'合格线 '+x.m.threshold+'%';
+    const rate = activeN ? x.full/activeN : 0;
+    const cls = x.full===activeN ? '' : (x.full===0 ? 'bad' : 'warn');
+    const dot = x.full===activeN ? 'dotok' : (x.full===0 ? 'dotbad' : 'dotwarn');
     return `
     <div class="tile ${cls}">
       <div class="tile-top">
         <span class="tn">${esc(x.m.short||x.m.name)}</span>
         <span class="${dot}"></span>
       </div>
-      <div class="tv">${x.pass}<small>/${activeN}人</small></div>
+      <div class="tv">${x.full}<small>/${activeN}人</small></div>
       <div class="bar"><i style="width:${Math.round(rate*100)}%"></i></div>
-      <div class="tfoot">${foot}</div>
+      <div class="tfoot">${tileFoot(x, activeN)}</div>
     </div>`;
   }).join('');
 
@@ -894,9 +1119,8 @@ function viewDash(){
       <div class="rank-main">
         <div class="rank-line"><span class="rank-name">${esc(p.s.name)}</span></div>
         <div class="rank-meta">
-          ${d.recorded?'已录':'<span style="color:#c0892b">未录</span>'}
-          <span>· 达标 ${d.passCount}/${d.total}</span>
-          ${d.failCount?`<span style="color:var(--bad)">· 待跟进 ${d.failCount}</span>`:''}
+          ${d.recorded?'本月已录':'<span style="color:#c0892b">未录</span>'}
+          <span>· 满分 ${d.passCount}/${d.total} 项</span>
         </div>
         <div class="bar-track"><i style="width:${wpct}%"></i></div>
       </div>
@@ -908,33 +1132,40 @@ function viewDash(){
   ${dateBar()}
   <section class="card hero">
     <div class="ring" style="--deg:${pct*3.6}deg">
-      <div class="ring-in"><b>${st.recorded?fmt1(st.avg):'—'}</b><span>全店均分</span></div>
+      <div class="ring-in"><b>${st.recorded?fmt1(st.avg):'—'}</b><span>全店月均分</span></div>
     </div>
     <div class="hero-info">
-      <div class="hero-title">${today?'今日':'当日'} KPI 概览</div>
-      <div class="hero-sub">${st.recorded}/${activeN} 人已录 · 达标 ${st.passCount}/${st.totalCount} 项</div>
+      <div class="hero-title">${monthText} KPI 概览</div>
+      <div class="hero-sub">${st.recorded}/${activeN} 人已录 · 满分项 ${st.passCount}/${st.totalCount}</div>
       <div class="hero-tags">
         <span class="htag${st.recorded<activeN?' hot':''}">${st.recorded<activeN?'还差 '+(activeN-st.recorded)+' 人未录':'全员已录'}</span>
         <span class="htag">满分 ${st.maxScore} 分</span>
+        <span class="htag">人均任务 ${fmt1(monthlyTarget())} 万</span>
         ${note?'<span class="htag hot">有备注</span>':''}
       </div>
     </div>
   </section>
-  ${alerts.length?`<div class="alerts">${alerts.map(x=>`<span class="alert-chip ${x.fail?'':'warn'}">${esc(x.m.short)} ${x.fail?x.fail+'人未达标':x.pending+'人待完成'}</span>`).join('')}</div>`:''}
+  ${alerts.length?`<div class="alerts">${alerts.map(a=>{
+    const parts=[];
+    if(a.x.pending) parts.push(a.x.pending+'人未录');
+    if(a.x.partial) parts.push(a.x.partial+'人未满');
+    if(!parts.length) parts.push(a.miss+'人未得分');
+    return `<span class="alert-chip ${a.x.full?'warn':''}">${esc(a.x.m.short)} ${parts.join(' · ')}</span>`;
+  }).join('')}</div>`:''}
   <div class="tiles">${tiles}</div>
   ${hasData?`
-  <div class="sec-head"><h2>店员排行</h2><span>按当日得分</span></div>
+  <div class="sec-head"><h2>店员排行</h2><span>按本月得分</span></div>
   <div class="rank-list">${rankRows || '<div class="empty"><p>还没有店员，去设置里添加</p></div>'}</div>`:''}
   ${!st.recorded?`
   <div class="card empty" style="margin-top:10px">
     <div class="em-ic">📝</div>
-    <h3>${today?'今天还没开始录':'这天还没有记录'}</h3>
-    <p>每天花两三分钟，把 9 项指标过一遍，自动算分、自动汇总。</p>
+    <h3>${monthText}还没有记录</h3>
+    <p>按周录入金额和破冰情况，系统自动累计本月、折算占比和得分。</p>
     <button class="btn primary" data-act="goto-entry">去录入</button>
   </div>`:`
   <div class="btn-row" style="margin-top:10px">
     <button class="btn primary" data-act="goto-entry">继续录入</button>
-    <button class="btn" data-act="goto-report">生成日报</button>
+    <button class="btn" data-act="goto-report">生成月报</button>
   </div>`}
   ${note?`<div class="card" style="margin-top:10px;padding:11px 13px"><div class="hint" style="margin-bottom:4px">当日备注</div><div style="font-size:12.5px;white-space:pre-wrap">${esc(note)}</div></div>`:''}
   `;
@@ -942,83 +1173,141 @@ function viewDash(){
 
 function entryFieldHTML(s, m){
   const st = metricState(s.id, m, ui.date);
-  const raw = getRec(ui.date, s.id, m.id);
-  const chip = chipInfo(m, st);
-  if(m.type==='event'){
-    const v = raw===1?1:raw===0?0:null;
-    const note = periodNote(m, st);
+  const score = metricScore(m, st);
+  const chip = chipInfo(m, st, score);
+  const note = periodNote(m, st);
+
+  if(m.type==='amount'){
+    const val = st.weekValue===null ? '' : st.weekValue;
+    return `
+    <label class="metric-field" data-field="${s.id}:${m.id}">
+      <span class="fl">${esc(m.short||m.name)}<em>本周 · ≥${m.threshold}%</em></span>
+      <span class="input-row">
+        <input type="number" inputmode="decimal" step="0.1" min="0" max="9999" placeholder="—"
+          value="${val}" data-in="amount" data-staff="${s.id}" data-metric="${m.id}">
+        <span class="suffix">万</span>
+      </span>
+      <span class="period-note" data-note>${note}</span>
+      <span class="state-chip ${chip.cls}" data-chip>${chip.text}</span>
+    </label>`;
+  }
+
+  if(m.type==='review'){
+    const cur = st.weekValue || {total:0, reviewed:0};
     return `
     <div class="metric-field wide" data-field="${s.id}:${m.id}">
-      <span class="fl">${esc(m.name)}<em>${periodLabel(m)}</em></span>
-      <div class="seg-toggle">
-        <button data-act="event" data-staff="${s.id}" data-metric="${m.id}" data-val="1" class="${v===1?'on':''}">✓ 已完成</button>
-        <button data-act="event" data-staff="${s.id}" data-metric="${m.id}" data-val="0" class="${v===0?'on':''}">未完成</button>
+      <span class="fl">${esc(m.name)}<em>本周 · ≥${m.threshold}%</em></span>
+      <div class="review-inputs">
+        <label><span>总单</span><input type="number" inputmode="numeric" min="0" max="9999" placeholder="—"
+          value="${cur.total||''}" data-in="reviewTotal" data-staff="${s.id}" data-metric="${m.id}"><span>笔</span></label>
+        <label><span>参评</span><input type="number" inputmode="numeric" min="0" max="9999" placeholder="—"
+          value="${cur.reviewed||''}" data-in="reviewReviewed" data-staff="${s.id}" data-metric="${m.id}"><span>笔</span></label>
       </div>
-      <span class="state-chip ${chip.cls}" data-chip>${chip.text}</span>
       <span class="period-note" data-note>${note}</span>
+      <span class="state-chip ${chip.cls}" data-chip>${chip.text}</span>
     </div>`;
   }
-  const val = raw===undefined||raw===null ? '' : raw;
-  const label = m.period==='month' ? '本月累计' : ('≥'+m.threshold+'%');
+
+  // 破冰计数
+  let val = '';
+  if(m.entry==='week' && st.weekValue!==null) val = st.weekValue;
+  else if(m.entry==='half' && st.halfValue!==null) val = st.halfValue;
+  else if(m.entry==='month' && st.monthValue!==null) val = st.monthValue;
+  const tag = m.entry==='week' ? '本周' : m.entry==='half' ? '本半月' : '本月';
   return `
-  <label class="metric-field" data-field="${s.id}:${m.id}">
-    <span class="fl">${esc(m.short||m.name)}<em>${label}</em></span>
+  <div class="metric-field wide" data-field="${s.id}:${m.id}">
+    <span class="fl">${esc(m.name)}<em>${tag} · ≥${m.min||1}${m.unit||'次'}</em></span>
     <span class="input-row">
-      <input type="number" inputmode="decimal" step="0.1" min="0" max="999" placeholder="—"
-        value="${val}" data-in="metric" data-staff="${s.id}" data-metric="${m.id}">
-      <span class="suffix">%</span>
+      <input type="number" inputmode="numeric" step="1" min="0" max="999" placeholder="—"
+        value="${val}" data-in="count" data-staff="${s.id}" data-metric="${m.id}">
+      <span class="suffix">${m.unit||'次'}</span>
     </span>
+    <span class="period-note" data-note>${note}</span>
     <span class="state-chip ${chip.cls}" data-chip>${chip.text}</span>
-    ${m.period!=='day'?'<span class="period-note" data-note>'+periodNote(m,st)+'</span>':''}
-  </label>`;
+  </div>`;
 }
 
-function chipInfo(m, st){
-  if(st.status==='pass') return { cls:'ok', text: m.type==='event' ? '已完成' : '达标' };
-  if(st.status==='fail'){
-    if(m.type==='event') return { cls:'bad', text:'未完成' };
-    const diff = Math.max(0, m.threshold - Number(st.value||0));
-    return { cls:'bad', text: '差 '+fmt1(diff)+'%' };
+function chipInfo(m, st, score){
+  const max = Number(m.score)||0;
+  const val = score===undefined ? metricScore(m, st) : score;
+  let cls = '';
+  if(max>0){
+    if(val >= max-0.001) cls = 'ok';
+    else if(val > 0) cls = 'warn';
+    else if(st.status!=='pending') cls = 'bad';
   }
-  if(m.type==='event') return { cls:'', text: st.value===0 ? '未完成' : '待完成' };
-  return { cls:'', text:'未填' };
+  let text = '';
+  if(m.type==='amount'){
+    if(st.ratio===null || st.ratio===undefined){
+      text = '得分 0/'+max;
+    }else if(st.ratio >= m.threshold){
+      text = '占比 '+fmt1(st.ratio)+'% · 得分 '+fmt1(val)+'/'+max;
+    }else{
+      const shortAmt = (m.threshold-st.ratio)/100*monthlyTarget();
+      text = '得分 '+fmt1(val)+'/'+max+' · 差'+fmt1(shortAmt)+'万';
+    }
+  }else if(m.type==='review'){
+    text = '得分 '+fmt1(val)+'/'+max;
+  }else if(m.type==='count'){
+    if(st.status==='pending') text = '未录';
+    else text = (st.pass?'已破冰':'未满分')+' · 得分 '+fmt1(val)+'/'+max;
+  }else{
+    text = st.pass ? '达标' : '未达标';
+  }
+  return { cls, text };
 }
 
 function periodNote(m, st){
-  if(m.period==='day') return '';
-  if(m.type==='event'){
-    if(st.status==='pass' && st.date && st.date!==ui.date){
-      return periodTag(m)+' '+mdShort(st.date)+' 已完成';
+  if(m.type==='amount'){
+    const parts = [];
+    parts.push(st.value===null ? '本月未录' : '本月 '+fmt1(st.value)+'万');
+    parts.push(st.ratio===null ? '占比 —' : '占比 '+fmt1(st.ratio)+'%');
+    if(monthKey(weekStart(ui.date))!==monthKey(ui.date)){
+      parts.push('本周计入'+(parseDate(weekStart(ui.date)).getMonth()+1)+'月');
     }
-    return '';
+    return parts.join(' · ');
   }
-  if(st.status==='pass' && st.date && st.date!==ui.date){
-    return periodTag(m)+'最新 '+fmt1(st.value)+'%（'+mdShort(st.date)+'）';
+  if(m.type==='review'){
+    const parts = [];
+    parts.push(st.weekRatio===null ? '本周未录' : '本周 '+fmt1(st.weekRatio)+'%');
+    parts.push(st.ratio===null ? '截止 —' : '截止 '+fmt1(st.ratio)+'%');
+    parts.push(st.monthRatio===null ? '本月 —' : '本月 '+fmt1(st.monthRatio)+'%');
+    parts.push('已合格 '+(st.weeksPassed||0)+'/4 周');
+    return parts.join(' · ');
   }
-  if(st.status==='pending') return periodTag(m)+'还未录';
-  return '';
+  if(m.entry==='week'){
+    return '本月 '+(st.periodsPassed||0)+'/4 周 · 本周 '+(st.weekValue===null?'未录':fmt1(st.weekValue)+'次');
+  }
+  if(m.entry==='half'){
+    return '本月 '+(st.periodsPassed||0)+'/2 半月 · 本半月 '+(st.halfValue===null?'未录':fmt1(st.halfValue)+'单');
+  }
+  return '本月 '+(st.monthValue===null?'未录':fmt1(st.monthValue)+'单');
 }
 
 function viewEntry(){
   const active = S.staff.filter(s=>s.active);
+  const amountMetrics = S.metrics.filter(m=>m.enabled && m.type==='amount');
+  const reviewMetrics = S.metrics.filter(m=>m.enabled && m.type==='review');
+  const countMetrics = S.metrics.filter(m=>m.enabled && m.type==='count');
+  const wSmall = monthKey(weekStart(ui.date))!==monthKey(ui.date);
   const cards = active.map(s=>{
     const d = staffDaily(s.id, ui.date);
-    const ratioMetrics = S.metrics.filter(m=>m.enabled && m.type==='ratio');
-    const eventMetrics = S.metrics.filter(m=>m.enabled && m.type==='event');
     return `
     <section class="entry-card" data-staff-card="${s.id}">
       <header class="entry-head">
         <span class="avatar">${esc(s.name.slice(0,1))}</span>
         <div class="eh-main">
           <h3>${esc(s.name)}</h3>
-          <p><b data-card-score>${d.score}</b>/${d.max} 分 · 达标 <span data-card-pass>${d.passCount}/${d.total}</span></p>
+          <p><b data-card-score>${fmt1(d.score)}</b>/${d.max} 分 · 满分 <span data-card-pass>${d.passCount}/${d.total}</span></p>
         </div>
         <span class="entry-dot ${d.recorded?'ok':''}" data-card-dot></span>
       </header>
-      <div class="group-label">占比类</div>
-      <div class="metric-grid">${ratioMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
-      <div class="group-label" style="margin-top:11px">破冰类</div>
-      <div class="metric-grid">${eventMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
+      <div class="group-label">销售金额 · 本周录入，自动累计本月</div>
+      <div class="metric-grid">${amountMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
+      <div class="group-label" style="margin-top:11px">参评率 · 本周录入</div>
+      <div class="metric-grid">${reviewMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
+      <div class="group-label" style="margin-top:11px">破冰 · 周 / 半月 / 月</div>
+      <div class="metric-grid">${countMetrics.map(m=>entryFieldHTML(s,m)).join('')}</div>
       <div class="entry-foot"><button class="mini-btn" data-act="next-staff" data-staff="${s.id}">下一位 →</button></div>
     </section>`;
   }).join('');
@@ -1028,11 +1317,10 @@ function viewEntry(){
   <div class="card entry-actions">
     <div class="ea-main">
       <b>${md(ui.date)} 录入</b>
-      <div class="hint">改完自动保存，不用点提交</div>
+      <div class="hint">本周 ${weekLabel(ui.date)}${wSmall?' · 计入'+(parseDate(weekStart(ui.date)).getMonth()+1)+'月':''} · 改完自动保存</div>
     </div>
     <div class="mini-actions">
-      <button class="mini-btn" data-act="copy-yesterday">沿用昨日</button>
-      <button class="mini-btn danger" data-act="clear-day">清空</button>
+      <button class="mini-btn danger" data-act="clear-week">清空本周</button>
     </div>
   </div>
   <div class="staff-jump">${active.map(s=>`<button class="jump-chip" data-act="jump-staff" data-staff="${s.id}">${esc(s.name)}</button>`).join('')}</div>
@@ -1057,20 +1345,19 @@ function viewTrend(){
     for(let i=n-1;i>=0;i--) dates.push(addDays(today,i));
   }
   const rows = dates.map(d=>({ d, st:storeStats(d) })).filter(x=>x.st.recorded>0);
-  const maxScore = S.metrics.filter(m=>m.enabled).reduce((a,m)=>a+(m.score||0),0) || 1;
-  const summary = rows.length ? rangeSummary('week', today) : null;
+  const maxScore = S.metrics.filter(m=>m.enabled).reduce((a,m)=>a+(Number(m.score)||0),0) || 1;
 
   let chart = '';
   if(rows.length>=2){
     chart = lineChart(rows, maxScore);
   }else if(rows.length===1){
-    chart = `<div class="chart-empty">这一天均分 <b style="font-size:20px;color:var(--brand)">${fmt1(rows[0].st.avg)}</b> / ${maxScore} 分<br><span style="font-size:10.5px">再录几天就能看到趋势线</span></div>`;
+    chart = `<div class="chart-empty">本月累计均分 <b style="font-size:20px;color:var(--brand)">${fmt1(rows[0].st.avg)}</b> / ${maxScore} 分<br><span style="font-size:10.5px">再录几周就能看到趋势线</span></div>`;
   }else{
-    chart = '<div class="chart-empty">这段时间还没有记录<br><span style="font-size:10.5px">先去录几天，趋势会自动出来</span></div>';
+    chart = '<div class="chart-empty">这段时间还没有记录<br><span style="font-size:10.5px">先去录几周，趋势会自动出来</span></div>';
   }
 
   const metricBars = (rows.length ? metricRates(rows, S.staff.filter(x=>x.active)) : []).map(x=>{
-    const rate = x.total ? x.pass/x.total : 0;
+    const rate = x.progress||0;
     const cls = rate>=0.8?'':(rate>=0.5?'warn':'bad');
     return `
     <div class="mb-row">
@@ -1082,9 +1369,10 @@ function viewTrend(){
 
   const active = S.staff.filter(s=>s.active);
   const rank = active.map(s=>{
-    const ds = rows.map(r=>staffDaily(s.id,r.d)).filter(d=>d.recorded);
-    return { s, days:ds.length, avg:mean(ds.map(d=>d.score)) };
-  }).sort((a,b)=>b.avg-a.avg);
+    const ds = rows.map(r=>({ d:r.d, dly:staffDaily(s.id,r.d) })).filter(x=>x.dly.recorded);
+    const last = ds[ds.length-1];
+    return { s, days:ds.length, score:last?last.dly.score:0, has:!!last };
+  }).sort((a,b)=>b.score-a.score);
 
   return `
   <div class="seg">
@@ -1093,21 +1381,21 @@ function viewTrend(){
     <button data-act="range" data-range="month" class="${range==='month'?'on':''}">本月</button>
   </div>
   <div class="card chart-card">
-    <div class="chart-head"><b>全店日均分</b><span>满分 ${maxScore} 分</span></div>
+    <div class="chart-head"><b>全店月累计均分</b><span>满分 ${maxScore} 分</span></div>
     <div class="chart-wrap">${chart}</div>
   </div>
-  <div class="sec-head"><h2>指标达标率</h2><span>${rows.length} 天有记录</span></div>
+  <div class="sec-head"><h2>指标得分进度</h2><span>${rows.length} 天有记录</span></div>
   <div class="card metric-bars">${rows.length?metricBars:'<div class="chart-empty" style="padding:14px">暂无数据</div>'}</div>
-  <div class="sec-head"><h2>店员排名</h2><span>按区间日均分</span></div>
+  <div class="sec-head"><h2>店员排名</h2><span>按最新本月得分</span></div>
   <div class="trend-rank">
     ${rank.map((r,i)=>`
       <div class="tr-row">
         <span class="rank-no ${i===0?'r1':i===1?'r2':i===2?'r3':''}">${i+1}</span>
-        <span class="tr-name">${esc(r.s.name)} <span class="tr-days">${r.days}天</span></span>
-        <span class="tr-avg">${r.days?fmt1(r.avg):'—'}<small> 分</small></span>
+        <span class="tr-name">${esc(r.s.name)} <span class="tr-days">${r.days}天有录</span></span>
+        <span class="tr-avg">${r.has?fmt1(r.score):'—'}<small> 分</small></span>
       </div>`).join('')}
   </div>
-  <div class="tip-box" style="margin-bottom:12px">提示：破冰类指标按周期只记一次，所以同一周/月内会重复计入达标率，适合看整体完成情况。</div>
+  <div class="tip-box" style="margin-bottom:12px">提示：得分是本月累计值，会随每周录入逐步增加；金额类按「完成占比 ÷ 合格线 × 10 分」折算。</div>
   `;
 }
 
@@ -1185,101 +1473,176 @@ function viewReport(){
   `;
 }
 
-function buildReport(type, anchor){
-  if(type==='day') return buildDayReport(anchor);
-  const name = type==='week'?'周报':'月报';
-  const dates = reportRange(type, anchor);
-  const sum = rangeSummary(type, anchor);
-  const rows = sum.rows;
-  const noData = rows.length===0;
-  const lines = [];
-  const rangeText = dates.length ? md(dates[0])+' – '+md(dates[dates.length-1]) : md(anchor);
-  lines.push('【'+S.storeName+'】'+rangeText+' '+name);
-  if(noData){
-    lines.push('本期还没有记录。');
-    return lines.join('\n');
+function amountMetrics(){ return S.metrics.filter(m=>m.enabled && m.type==='amount'); }
+function miscMetrics(){ return S.metrics.filter(m=>m.enabled && (m.type==='review' || m.type==='count')); }
+
+function shortfallText(item){
+  const m = item.m, st = item.st;
+  if(m.type==='amount'){
+    if(st.value==null) return m.short+' 未录';
+    return m.short+' '+fmt1(st.value)+'万（占比'+fmt1(st.ratio)+'%）';
   }
-  lines.push('统计天数：'+rows.length+' 天（有记录）');
-  lines.push('日均分：'+fmt1(sum.avg)+' / '+(sum.per[0]?sum.per[0].max:0)+' 分');
-  if(sum.best) lines.push('最好的一天：'+md(sum.best.d)+' '+fmt1(sum.best.st.avg)+' 分');
-  lines.push('');
-  lines.push('一、指标达标');
-  for(const x of sum.metricStats){
-    const rate = x.total ? Math.round(x.pass/x.total*100) : 0;
-    const unit = x.m.period==='day' ? ' 人次' : '';
-    lines.push('- '+x.m.name+'：'+x.pass+'/'+x.total+unit+'（'+rate+'%）');
+  if(m.type==='review'){
+    if(st.ratio==null) return '参评未录';
+    return '参评 '+fmt1(st.ratio)+'%（'+st.weeksPassed+'/4周合格）';
   }
-  lines.push('');
-  lines.push('二、店员排名');
-  sum.per.forEach((p,i)=>{
-    lines.push((i+1)+'. '+p.s.name+'：'+(p.days?('日均 '+fmt1(p.avg)+' 分（'+p.days+' 天）'):'未录'));
-  });
-  lines.push('');
+  if(m.entry==='week') return m.short+' '+st.periodsPassed+'/4周';
+  if(m.entry==='half') return m.short+' '+st.periodsPassed+'/2半月';
+  return m.short+' '+(st.value==null?'未录':fmt1(st.value)+'单');
+}
+
+function miscLine(x){
+  const m = x.m;
+  if(m.type==='review'){
+    const rMonth = x.monthTotalOrders ? fmt1(x.monthReviewed/x.monthTotalOrders*100)+'%' : '—';
+    const rCum = x.totalOrders ? fmt1(x.reviewed/x.totalOrders*100)+'%' : '—';
+    return '- 参评率：本月 '+rMonth+'（'+x.monthReviewed+'/'+x.monthTotalOrders+' 笔，合格 '+m.threshold+'%）· 截止本周 '+rCum+'，'+x.full+' 人满分（每周2.5分）';
+  }
+  if(m.entry==='week'){
+    return '- '+m.name+'：本月完成 '+x.periods+' 周，'+x.full+' 人满分（4周满分，每周2.5分）';
+  }
+  if(m.entry==='half'){
+    return '- '+m.name+'：本月完成 '+x.periods+' 个半月，'+x.full+' 人满分（2个半月满分，每半月5分）';
+  }
+  return '- '+m.name+'：本月 '+fmt1(x.sum)+' 单，'+x.full+' 人完成（每月1单满分）';
+}
+
+function pushIssues(lines, st, maxItems){
   const issues = [];
-  for(const r of rows){
-    for(const s of S.staff.filter(x=>x.active)){
-      const d = staffDaily(s.id, r.d);
-      const bad = d.items.filter(x=>x.st.status==='fail').map(x=>x.m.name);
-      if(bad.length){
-        issues.push(md(r.d)+' '+s.name+'：'+bad.slice(0,4).join('、'));
-      }
+  for(const p of st.per){
+    const bad = p.d.items.filter(it=>!it.full);
+    if(bad.length){
+      issues.push(p.s.name+'：'+bad.slice(0,4).map(shortfallText).join('、')+(bad.length>4?' 等':''));
     }
   }
-  lines.push('三、待跟进');
-  if(issues.length){
-    issues.slice(0,10).forEach(x=>lines.push('- '+x));
-    if(issues.length>10) lines.push('…另有 '+(issues.length-10)+' 条');
+  if(!issues.length){
+    lines.push('无，全部满分。');
   }else{
-    lines.push('无，全部达标。');
+    issues.slice(0, maxItems||12).forEach(x=>lines.push('- '+x));
+    if(issues.length>(maxItems||12)) lines.push('…另有 '+(issues.length-(maxItems||12))+' 人');
   }
-  const notes = rows.map(r=>({d:r.d,n:(S.notes[r.d]||'').trim()})).filter(x=>x.n);
-  if(notes.length){
-    lines.push('');
-    lines.push('四、备注');
-    notes.slice(0,6).forEach(x=>lines.push(md(x.d)+'：'+x.n));
-  }
-  return lines.join('\n');
+}
+
+function buildReport(type, anchor){
+  if(type==='day') return buildDayReport(anchor);
+  if(type==='week') return buildWeekReport(anchor);
+  return buildMonthReport(anchor);
 }
 
 function buildDayReport(date){
   const st = storeStats(date);
   const activeN = st.active.length;
+  const base = monthlyTarget();
+  const monthText = (parseDate(date).getMonth()+1)+'月';
   const lines = [];
-  lines.push('【'+S.storeName+'】'+md(date)+' 周'+weekdayCN(date)+' 日报');
-  lines.push('全店均分：'+fmt1(st.avg)+' / '+st.maxScore+' 分 · '+st.recorded+'/'+activeN+' 人已录');
-  lines.push('达标人次：'+st.passCount+' / '+st.totalCount+' 项');
+  lines.push('【'+S.storeName+'】'+md(date)+' 周'+weekdayCN(date)+' · '+monthText+'KPI 跟进');
+  lines.push('人均月度任务：'+fmt1(base)+'万（全店 '+fmt1(base*activeN)+'万）· 全店月均分：'+fmt1(st.avg)+' / '+st.maxScore+' 分 · '+st.recorded+'/'+activeN+' 人已录');
   lines.push('');
-  lines.push('一、指标达标');
-  for(const x of st.metrics){
-    const rate = activeN ? Math.round(x.pass/activeN*100) : 0;
-    const extra = x.m.type==='ratio'
-      ? '，合格线 '+x.m.threshold+'%'
-      : (x.m.period==='week' ? '，本周' : x.m.period==='month' ? '，本月' : '');
-    lines.push('- '+x.m.name+'：'+x.pass+'/'+activeN+' 人（'+rate+'%'+extra+'）');
+  lines.push('一、销售金额（本月累计）');
+  for(const x of st.metrics.filter(x=>x.m.type==='amount')){
+    const ratio = x.ratio==null ? '—' : fmt1(x.ratio)+'%';
+    lines.push('- '+x.m.name+'：全店 '+fmt1(x.sum)+'万，占比 '+ratio+'（合格 '+x.m.threshold+'%），'+x.full+'/'+activeN+' 人达标');
   }
-  const issues = st.per.filter(p=>p.d.failCount>0 || p.d.pendingCount>0);
   lines.push('');
-  lines.push('二、待跟进');
-  if(!issues.length){
-    lines.push('无，全员达标。');
-  }else{
-    for(const p of issues){
-      if(!p.d.recorded){ lines.push('- '+p.s.name+'：今日未录'); continue; }
-      const fails = p.d.items.filter(x=>x.st.status==='fail').map(x=>{
-        if(x.m.type==='event') return x.m.name;
-        return x.m.name+' '+fmt1(x.st.value)+'%（<'+x.m.threshold+'%）';
-      });
-      const pends = p.d.items.filter(x=>x.st.status==='pending').map(x=>x.m.type==='event'?x.m.name+'未完成':x.m.name+'未录');
-      const all = [...fails, ...pends];
-      if(all.length) lines.push('- '+p.s.name+'：'+all.slice(0,5).join('、')+(all.length>5?' 等':''));
-    }
+  lines.push('二、参评率与破冰');
+  for(const x of st.metrics.filter(x=>x.m.type==='review' || x.m.type==='count')){
+    lines.push(miscLine(x));
   }
+  lines.push('');
+  lines.push('三、待跟进');
+  pushIssues(lines, st, 12);
   const note = (S.notes[date]||'').trim();
   if(note){
     lines.push('');
-    lines.push('三、备注');
+    lines.push('四、备注');
     lines.push(note);
   }
+  return lines.join('\n');
+}
+
+function buildWeekReport(anchor){
+  const ws = weekStart(anchor);
+  const we = addDays(ws, 6);
+  const at = anchor > todayStr() ? todayStr() : anchor;
+  const active = S.staff.filter(s=>s.active);
+  const st = storeStats(at);
+  const base = monthlyTarget();
+  const activeN = active.length;
+  const lines = [];
+  lines.push('【'+S.storeName+'】'+md(ws)+'–'+md(we)+' 周报');
+  lines.push('人均月度任务：'+fmt1(base)+'万');
+  lines.push('');
+  lines.push('一、本周金额（万）');
+  for(const s of active){
+    const parts = amountMetrics().map(m=>{
+      const v = getRec(ws, s.id, m.id);
+      return m.short+' '+(v===undefined||v===null||v===''?'—':fmt1(v));
+    });
+    lines.push('- '+s.name+'：'+parts.join(' · '));
+  }
+  lines.push('');
+  lines.push('二、本月累计与占比');
+  for(const x of st.metrics.filter(x=>x.m.type==='amount')){
+    const ratio = x.ratio==null ? '—' : fmt1(x.ratio)+'%';
+    lines.push('- '+x.m.name+'：全店 '+fmt1(x.sum)+'万，占比 '+ratio+'（合格 '+x.m.threshold+'%），'+x.full+'/'+activeN+' 人达标');
+  }
+  lines.push('');
+  lines.push('三、店员本月得分');
+  st.per.slice().sort((a,b)=>b.d.score-a.d.score || a.s.name.localeCompare(b.s.name,'zh')).forEach((p,i)=>{
+    lines.push((i+1)+'. '+p.s.name+'：'+fmt1(p.d.score)+'/'+p.d.max+' 分');
+  });
+  lines.push('');
+  lines.push('四、参评率（单周 / 截止本周 / 本月）');
+  const rm = S.metrics.find(m=>m.enabled && m.type==='review');
+  if(rm){
+    for(const s of active){
+      const rs = metricState(s.id, rm, at);
+      const w = rs.weekRatio==null ? '—' : fmt1(rs.weekRatio)+'%';
+      const c = rs.ratio==null ? '—' : fmt1(rs.ratio)+'%';
+      const mo = rs.monthRatio==null ? '—' : fmt1(rs.monthRatio)+'%';
+      lines.push('- '+s.name+'：本周 '+w+' · 截止 '+c+' · 本月 '+mo);
+    }
+  }else{
+    lines.push('- 未启用');
+  }
+  lines.push('');
+  lines.push('五、破冰');
+  for(const x of st.metrics.filter(x=>x.m.type==='count')) lines.push(miscLine(x));
+  lines.push('');
+  lines.push('六、待跟进');
+  pushIssues(lines, st, 10);
+  return lines.join('\n');
+}
+
+function buildMonthReport(anchor){
+  const st = storeStats(anchor);
+  const activeN = st.active.length;
+  const base = monthlyTarget();
+  const monthText = (parseDate(anchor).getMonth()+1)+'月';
+  const lines = [];
+  lines.push('【'+S.storeName+'】'+monthText+' 月报');
+  lines.push('人均月度任务：'+fmt1(base)+'万（全店 '+fmt1(base*activeN)+'万）· 全店月均分：'+fmt1(st.avg)+' / '+st.maxScore+' 分 · '+st.recorded+'/'+activeN+' 人已录');
+  lines.push('');
+  lines.push('一、销售金额（本月累计）');
+  for(const x of st.metrics.filter(x=>x.m.type==='amount')){
+    const ratio = x.ratio==null ? '—' : fmt1(x.ratio)+'%';
+    lines.push('- '+x.m.name+'：全店 '+fmt1(x.sum)+'万，占比 '+ratio+'（合格 '+x.m.threshold+'%），'+x.full+'/'+activeN+' 人达标');
+  }
+  lines.push('');
+  lines.push('二、参评率与破冰');
+  for(const x of st.metrics.filter(x=>x.m.type==='review' || x.m.type==='count')) lines.push(miscLine(x));
+  lines.push('');
+  lines.push('三、店员得分与排名');
+  st.per.slice().sort((a,b)=>b.d.score-a.d.score || a.s.name.localeCompare(b.s.name,'zh')).forEach((p,i)=>{
+    const sale = p.d.items.find(x=>x.m.id==='salesTarget');
+    const saleText = sale && sale.st.value!=null
+      ? fmt1(sale.st.value)+'万/'+fmt1(base)+'万（'+fmt1(sale.st.ratio)+'%）'
+      : '未录';
+    lines.push((i+1)+'. '+p.s.name+'：'+fmt1(p.d.score)+'/'+p.d.max+' 分 · 总销售 '+saleText);
+  });
+  lines.push('');
+  lines.push('四、待跟进');
+  pushIssues(lines, st, 12);
   return lines.join('\n');
 }
 
@@ -1305,15 +1668,10 @@ function viewSettings(){
       </summary>
       <div class="mset-body">
         <label class="full">启用 <span class="switch"><input type="checkbox" data-set="metricEnabled" data-metric="${m.id}" ${m.enabled?'checked':''}><span></span></span></label>
-        ${m.type==='ratio'?`<label>合格线（%）<input type="number" inputmode="decimal" step="0.1" min="0" max="999" value="${m.threshold}" data-set="threshold" data-metric="${m.id}"></label>`:''}
+        ${(m.type==='amount'||m.type==='review')?`<label>合格线（%）<input type="number" inputmode="decimal" step="0.1" min="0" max="999" value="${m.threshold}" data-set="threshold" data-metric="${m.id}"></label>`:''}
+        ${m.type==='count'?`<label>破冰门槛（${esc(m.unit||'次')}）<input type="number" inputmode="numeric" step="1" min="1" max="99" value="${m.min||1}" data-set="min" data-metric="${m.id}"></label>`:''}
         <label>分值<input type="number" inputmode="numeric" step="1" min="0" max="100" value="${m.score}" data-set="score" data-metric="${m.id}"></label>
-        <label>统计周期
-          <select data-set="period" data-metric="${m.id}">
-            <option value="day" ${m.period==='day'?'selected':''}>每天</option>
-            <option value="week" ${m.period==='week'?'selected':''}>每周</option>
-            <option value="month" ${m.period==='month'?'selected':''}>每月</option>
-          </select>
-        </label>
+        <div class="full" style="font-size:11px;color:var(--ink3)">统计方式：${periodLabel(m)}${m.type==='amount'?' · 本月累计':m.type==='review'?' · 4周满分':''}</div>
       </div>
     </details>`).join('');
 
@@ -1332,7 +1690,13 @@ function viewSettings(){
         <span class="set-label">店名</span>
         <input type="text" value="${esc(S.storeName)}" maxlength="30" data-set="storeName" aria-label="门店名称">
       </div>
+      <div class="set-row">
+        <span class="set-label">月度任务</span>
+        <input type="number" inputmode="decimal" step="1" min="1" max="9999" value="${monthlyTarget()}" data-set="monthlyTarget" aria-label="人均月度任务（万）">
+        <span class="unit">万/人</span>
+      </div>
     </div>
+    <div class="tip-box">金额类指标按这个任务额折算：本月累计金额 ÷ 任务额 = 完成占比。</div>
   </div>
 
   <div class="set-sec">
@@ -1369,7 +1733,7 @@ function viewSettings(){
       </div>
       ${snapRows?`<div style="border-top:1px solid var(--line2)"><div class="about-row" style="padding-top:9px;padding-bottom:6px"><span>最近快照</span><span class="hint">可恢复误删</span></div>${snapRows}</div>`:''}
       <div class="data-btns" style="border-top:1px solid var(--line2)">
-        <button class="btn danger" data-act="clear-day">清空当日</button>
+        <button class="btn danger" data-act="clear-week">清空本周</button>
         <button class="btn danger" data-act="clear-all">清空所有记录</button>
       </div>
     </div>
@@ -1381,7 +1745,7 @@ function viewSettings(){
     <div class="set-card">
       <div class="about-row"><span>版本</span><span class="ver">v${APP_VERSION}</span></div>
       <div class="about-row"><span>数据占用</span><span>${Math.max(1,Math.round(new Blob([JSON.stringify(S)]).size/1024))} KB</span></div>
-      <div class="about-row"><span>已记录天数</span><span>${Object.keys(S.records).length} 天</span></div>
+      <div class="about-row"><span>记录条目</span><span>${Object.keys(S.records).length} 条</span></div>
       <div class="about-row"><span>更新</span><button class="link-btn" data-act="check-update">检查更新</button></div>
       <div class="about-row"><span>安装到桌面</span><button class="link-btn" data-act="install-help">看步骤</button></div>
     </div>
@@ -1417,16 +1781,12 @@ function refreshField(staffId, metricId){
   const field = document.querySelector('[data-field="'+staffId+':'+metricId+'"]');
   if(!field) return;
   const st = metricState(staffId, m, ui.date);
-  const chip = chipInfo(m, st);
+  const score = metricScore(m, st);
+  const chip = chipInfo(m, st, score);
   const chipEl = field.querySelector('[data-chip]');
   if(chipEl){ chipEl.textContent = chip.text; chipEl.className = 'state-chip '+chip.cls; }
   const noteEl = field.querySelector('[data-note]');
   if(noteEl) noteEl.textContent = periodNote(m, st);
-  const raw = getRec(ui.date, staffId, metricId);
-  field.querySelectorAll('[data-act="event"]').forEach(b=>{
-    const v = b.dataset.val==='1';
-    b.classList.toggle('on', raw!==undefined && raw!==null && ((v && raw===1) || (!v && raw===0)));
-  });
 }
 
 function refreshCard(staffId){
@@ -1436,68 +1796,90 @@ function refreshCard(staffId){
   const sc = card.querySelector('[data-card-score]');
   const pc = card.querySelector('[data-card-pass]');
   const dot = card.querySelector('[data-card-dot]');
-  if(sc) sc.textContent = d.score;
+  if(sc) sc.textContent = fmt1(d.score);
   if(pc) pc.textContent = d.passCount+'/'+d.total;
   if(dot) dot.classList.toggle('ok', d.recorded);
   S.metrics.filter(m=>m.enabled).forEach(m=>refreshField(staffId, m.id));
 }
 
-function onMetricInput(input){
+function onAmountInput(input){
   const staffId = input.dataset.staff;
   const metricId = input.dataset.metric;
-  let raw = input.value;
-  if(raw===''){ setRec(ui.date, staffId, metricId, null); }
+  const m = findMetric(metricId);
+  if(!m) return;
+  const key = entryKey(m, ui.date);
+  const raw = input.value;
+  if(raw===''){ setRec(key, staffId, metricId, null); }
   else{
     let v = Number(raw);
-    if(isNaN(v)){ return; }
+    if(isNaN(v)) return;
+    v = clamp(v, 0, 9999);
+    if(Number(raw) < 0) input.value = '0';
+    setRec(key, staffId, metricId, v);
+  }
+  refreshField(staffId, metricId);
+  refreshCard(staffId);
+  saveSoon();
+}
+
+function onCountInput(input){
+  const staffId = input.dataset.staff;
+  const metricId = input.dataset.metric;
+  const m = findMetric(metricId);
+  if(!m) return;
+  const key = entryKey(m, ui.date);
+  const raw = input.value;
+  if(raw===''){ setRec(key, staffId, metricId, null); }
+  else{
+    let v = Math.floor(Number(raw));
+    if(isNaN(v)) return;
     v = clamp(v, 0, 999);
     if(Number(raw) < 0) input.value = '0';
-    setRec(ui.date, staffId, metricId, v);
+    setRec(key, staffId, metricId, v);
   }
   refreshField(staffId, metricId);
   refreshCard(staffId);
   saveSoon();
 }
 
-function onEventClick(btn){
-  const staffId = btn.dataset.staff;
-  const metricId = btn.dataset.metric;
-  const val = Number(btn.dataset.val);
-  const current = getRec(ui.date, staffId, metricId);
-  const next = (current===val) ? null : val; // 再点一次取消
-  setRec(ui.date, staffId, metricId, next);
+function onReviewInput(input, field){
+  const staffId = input.dataset.staff;
+  const metricId = input.dataset.metric;
+  const m = findMetric(metricId);
+  if(!m) return;
+  const key = entryKey(m, ui.date);
+  const curRaw = getRec(key, staffId, metricId);
+  const cur = (curRaw && typeof curRaw==='object')
+    ? { total:Number(curRaw.total)||0, reviewed:Number(curRaw.reviewed)||0 }
+    : { total:0, reviewed:0 };
+  const v = input.value==='' ? 0 : clamp(Math.floor(Number(input.value)||0), 0, 9999);
+  if(field==='total'){
+    cur.total = v;
+    if(cur.reviewed > cur.total) cur.reviewed = cur.total;
+  }else{
+    cur.reviewed = v;
+    if(cur.total>0 && cur.reviewed > cur.total){ cur.reviewed = cur.total; input.value = cur.total; }
+  }
+  if(!cur.total && !cur.reviewed) setRec(key, staffId, metricId, null);
+  else setRec(key, staffId, metricId, { total:cur.total, reviewed:cur.reviewed });
+  const fieldEl = input.closest('[data-field]');
+  if(fieldEl){
+    const other = fieldEl.querySelector(field==='total' ? '[data-in="reviewReviewed"]' : '[data-in="reviewTotal"]');
+    if(other) other.value = field==='total' ? (cur.reviewed||'') : (cur.total||'');
+  }
   refreshField(staffId, metricId);
   refreshCard(staffId);
   saveSoon();
-  if(next===1) toast('已记录完成');
 }
 
-function copyYesterday(){
-  const y = addDays(ui.date, -1);
-  if(ui.date===todayStr() && !confirm('把 '+md(y)+' 的占比数据，复制到今天还没填的项？')) return;
-  let n = 0;
-  for(const s of S.staff.filter(x=>x.active)){
-    for(const m of S.metrics.filter(x=>x.enabled && x.type==='ratio' && x.period==='day')){
-      const todayV = getRec(ui.date, s.id, m.id);
-      const yV = getRec(y, s.id, m.id);
-      if((todayV===undefined||todayV===null) && yV!==undefined && yV!==null){
-        setRec(ui.date, s.id, m.id, yV);
-        n++;
-      }
-    }
-  }
-  saveNow();
-  render();
-  toast(n?('已沿用昨日 '+n+' 项'):'昨天没有可沿用的数据');
-}
-
-function clearDay(){
-  if(!confirm('清空 '+md(ui.date)+' 的全部录入和备注？')) return;
-  delete S.records[ui.date];
+function clearWeek(){
+  const key = weekStart(ui.date);
+  if(!confirm('清空本周（'+weekLabel(ui.date)+'）所有店员的销售、参评和周二换金录入？')) return;
+  delete S.records[key];
   delete S.notes[ui.date];
   saveNow();
   render();
-  toast('已清空当天记录');
+  toast('已清空本周录入');
 }
 
 function clearAll(){
@@ -1546,7 +1928,7 @@ function moveStaff(id, dir){
 }
 
 function resetMetrics(){
-  if(!confirm('把 9 项指标的合格线、分值、周期恢复成默认？已录数据不受影响。')) return;
+  if(!confirm('把 10 项指标的合格线、门槛、分值恢复成默认？已录数据不受影响。')) return;
   S.metrics = DEFAULT_METRICS.map(m=>({...m}));
   saveNow();
   render();
@@ -1563,8 +1945,13 @@ function exportJSON(){
 }
 
 function exportCSV(){
-  const metricNames = S.metrics.map(m=>m.name);
-  const rows = [['日期','店员',...metricNames]];
+  const metricNames = S.metrics.map(m=>{
+    if(m.type==='amount') return m.name+'（万）';
+    if(m.type==='count') return m.name+'（'+(m.unit||'次')+'）';
+    if(m.type==='review') return m.name+'（参评/总）';
+    return m.name;
+  });
+  const rows = [['周起始日','店员',...metricNames]];
   const dates = Object.keys(S.records).sort();
   for(const d of dates){
     for(const s of S.staff){
@@ -1573,7 +1960,10 @@ function exportCSV(){
       const vals = S.metrics.map(m=>{
         const v = r[m.id];
         if(v===undefined||v===null) return '';
-        if(m.type==='event') return v?1:0;
+        if(m.type==='review'){
+          if(!v || typeof v!=='object') return '';
+          return (Number(v.reviewed)||0)+'/'+(Number(v.total)||0);
+        }
         return v;
       });
       if(vals.some(v=>v!=='')) rows.push([d,s.name,...vals]);
@@ -1684,17 +2074,31 @@ function openStaffSheet(staffId){
   const d = staffDaily(staffId, ui.date);
   const rows = d.items.map(x=>{
     const m = x.m, st = x.st;
-    const cls = st.status==='pass'?'ok':st.status==='fail'?'bad':'';
-    const val = m.type==='event'
-      ? (st.status==='pass'?'已完成':st.status==='fail'?'未完成':(st.value===0?'未完成':'未填'))
-      : (st.value!=null ? fmt1(st.value)+'%' : '未填');
-    const sub = m.type==='ratio'
-      ? periodLabel(m)+' · 合格线 '+m.threshold+'%'+(st.date&&st.date!==ui.date?' · '+mdShort(st.date):'')
-      : periodLabel(m)+' · 破冰';
+    const cls = x.full ? 'ok' : (x.score>0 ? 'warn' : (st.status==='pending' ? '' : 'bad'));
+    let val = '';
+    if(m.type==='amount'){
+      val = st.value==null ? '未填' : fmt1(st.value)+'万 · '+fmt1(st.ratio)+'%';
+    }else if(m.type==='review'){
+      const w = st.weekRatio==null ? '—' : fmt1(st.weekRatio)+'%';
+      const c = st.ratio==null ? '—' : fmt1(st.ratio)+'%';
+      const mo = st.monthRatio==null ? '—' : fmt1(st.monthRatio)+'%';
+      val = '本周 '+w+'<br>截止 '+c+' · 本月 '+mo;
+    }else if(m.type==='count'){
+      if(m.entry==='week') val = (st.periodsPassed||0)+'/4周';
+      else if(m.entry==='half') val = (st.periodsPassed||0)+'/2半月';
+      else val = st.value==null ? '未填' : fmt1(st.value)+'单';
+    }else{
+      val = st.value!=null ? fmt1(st.value)+'%' : '未填';
+    }
+    let sub = '';
+    if(m.type==='amount') sub = '按周录 · 合格≥'+m.threshold+'% · 本月'+(st.weeksRecorded||0)+'周';
+    else if(m.type==='review') sub = '按周录 · 每周≥'+m.threshold+'% · 合格'+(st.weeksPassed||0)+'/4周';
+    else if(m.type==='count') sub = (m.entry==='week'?'每周':m.entry==='half'?'每半月':'每月')+' · ≥'+(m.min||1)+(m.unit||'');
+    else sub = periodLabel(m);
     return `
     <div class="detail-row">
       <div class="dr-main"><b>${esc(m.name)}</b><span>${sub}</span></div>
-      <div class="dr-val ${cls}">${val}<small>${m.score?(m.score+'分'):'监测'}</small></div>
+      <div class="dr-val ${cls}">${val}<small>${fmt1(x.score)}/${m.score||0} 分</small></div>
     </div>`;
   }).join('');
   openSheet(`
@@ -1717,8 +2121,8 @@ function openHelp(){
   openSheet(`
     <div class="sheet-bar"><h3>怎么用</h3><button class="x" data-act="close-sheet">×</button></div>
     <div class="sheet-body">
-      <div class="help-item"><span class="help-ic">1</span><div><b>每天录一次</b><p>点底部「录入」，按店员把 9 项指标填上。占比类直接填百分比，破冰类点「已完成」。改完自动保存。</p></div></div>
-      <div class="help-item"><span class="help-ic">2</span><div><b>看板自动算分</b><p>达标得满分，不达标 0 分；周/月指标按周期只记一次。红黄绿灯提示谁需要跟进。</p></div></div>
+      <div class="help-item"><span class="help-ic">1</span><div><b>每周录一次</b><p>点底部「录入」，填本周数据：销售类填本周金额（万），系统自动累计本月；参评率填本周总单数和参评单数，系统同时算单周、截止本周、本月三个参评率；破冰填次数或单数。改完自动保存。</p></div></div>
+      <div class="help-item"><span class="help-ic">2</span><div><b>自动折算得分</b><p>销售类得分 = 本月金额 ÷ 人均任务额（默认 30 万）÷ 合格线 × 10（如万相完成 6.5%，合格线 13%，得 5 分）。周二换金每周 2.5 分，CTF FOR YOU 每半月 5 分，高珠每月 1 单 10 分，参评率每周 2.5 分，满分 100。</p></div></div>
       <div class="help-item"><span class="help-ic">3</span><div><b>一键发群</b><p>「报表」里生成日报/周报/月报，复制后直接粘到门店群，格式不会乱。</p></div></div>
       <div class="help-item"><span class="help-ic">4</span><div><b>数据不含糊</b><p>数据只存在这台手机，不上传。设置里可以导出备份/Excel，换手机前先导出。同一台手机建议固定用一种方式打开（比如都用桌面图标），微信里和浏览器里的数据不互通。</p></div></div>
       <div class="help-item"><span class="help-ic">5</span><div><b>添加到桌面</b><p>安卓：浏览器菜单「添加到主屏幕」；苹果：Safari 分享「添加到主屏幕」；微信里先点右上角「在浏览器打开」。</p></div></div>
@@ -1761,7 +2165,7 @@ document.addEventListener('click', e=>{
     if(act==='shift-date'){ shiftDate(Number(el.dataset.delta)||0); return; }
     if(act==='today'){ ui.date = todayStr(); render(); return; }
     if(act==='goto-entry'){ setTab('entry'); return; }
-    if(act==='goto-report'){ ui.reportType='day'; setTab('report'); return; }
+    if(act==='goto-report'){ ui.reportType='month'; setTab('report'); return; }
     if(act==='goto-set'){ setTab('set'); return; }
     if(act==='staff-detail'){ openStaffSheet(el.dataset.staff); return; }
     if(act==='edit-staff'){
@@ -1774,7 +2178,6 @@ document.addEventListener('click', e=>{
       }, 60);
       return;
     }
-    if(act==='event'){ onEventClick(el); return; }
     if(act==='next-staff'){
       const active = S.staff.filter(s=>s.active);
       const i = active.findIndex(s=>s.id===el.dataset.staff);
@@ -1792,8 +2195,7 @@ document.addEventListener('click', e=>{
       if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
       return;
     }
-    if(act==='copy-yesterday'){ copyYesterday(); return; }
-    if(act==='clear-day'){ clearDay(); return; }
+    if(act==='clear-week'){ clearWeek(); return; }
     if(act==='clear-all'){ clearAll(); return; }
     if(act==='reset-metrics'){ resetMetrics(); return; }
     if(act==='add-staff'){ addStaff(); return; }
@@ -1820,7 +2222,10 @@ document.addEventListener('click', e=>{
 document.addEventListener('input', e=>{
   const t = e.target;
   if(t.id==='datePick'){ return; }
-  if(t.dataset && t.dataset.in==='metric'){ onMetricInput(t); return; }
+  if(t.dataset && t.dataset.in==='amount'){ onAmountInput(t); return; }
+  if(t.dataset && t.dataset.in==='count'){ onCountInput(t); return; }
+  if(t.dataset && t.dataset.in==='reviewTotal'){ onReviewInput(t, 'total'); return; }
+  if(t.dataset && t.dataset.in==='reviewReviewed'){ onReviewInput(t, 'reviewed'); return; }
   if(t.id==='dayNote'){
     S.notes[ui.date] = t.value;
     saveSoon();
@@ -1841,6 +2246,9 @@ document.addEventListener('input', e=>{
     }else if(key==='score'){
       const m = findMetric(t.dataset.metric);
       if(m){ const v = Number(t.value); if(!isNaN(v)){ m.score = clamp(v,0,100); updateMetricMeta(m); saveSoon(); } }
+    }else if(key==='min'){
+      const m = findMetric(t.dataset.metric);
+      if(m){ const v = Math.floor(Number(t.value)); if(!isNaN(v)){ m.min = clamp(v,1,99); updateMetricMeta(m); saveSoon(); } }
     }
     return;
   }
@@ -1869,9 +2277,9 @@ document.addEventListener('change', e=>{
     }else if(key==='metricEnabled'){
       const m = findMetric(t.dataset.metric);
       if(m){ m.enabled = t.checked; saveNow(); updateMetricMeta(m); }
-    }else if(key==='period'){
-      const m = findMetric(t.dataset.metric);
-      if(m){ m.period = t.value; saveNow(); updateMetricMeta(m); }
+    }else if(key==='monthlyTarget'){
+      const v = Number(t.value);
+      if(v>0){ S.monthlyTarget = clamp(v, 0.1, 9999); saveNow(); render(); }
     }
   }
 });
